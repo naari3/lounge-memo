@@ -12,6 +12,10 @@ impl RaceResult {
     pub fn new(course: Option<Course>, position: Position) -> RaceResult {
         RaceResult { course, position }
     }
+
+    pub fn to_score(&self) -> u32 {
+        self.position.to_score()
+    }
 }
 
 impl Display for RaceResult {
@@ -57,23 +61,40 @@ impl Position {
             _ => panic!("invalid index: {}", index),
         }
     }
+
+    pub fn to_score(self) -> u32 {
+        match self {
+            Position::First => 15,
+            Position::Second => 12,
+            Position::Third => 10,
+            Position::Fourth => 9,
+            Position::Fifth => 8,
+            Position::Sixth => 7,
+            Position::Seventh => 6,
+            Position::Eighth => 5,
+            Position::Ninth => 4,
+            Position::Tenth => 3,
+            Position::Eleventh => 2,
+            Position::Twelfth => 1,
+        }
+    }
 }
 
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let text = match self {
-            Position::First => "1st",
-            Position::Second => "2nd",
-            Position::Third => "3rd",
-            Position::Fourth => "4th",
-            Position::Fifth => "5th",
-            Position::Sixth => "6th",
-            Position::Seventh => "7th",
-            Position::Eighth => "8th",
-            Position::Ninth => "9th",
-            Position::Tenth => "10th",
-            Position::Eleventh => "11th",
-            Position::Twelfth => "12th",
+            Position::First => "1",
+            Position::Second => "2",
+            Position::Third => "3",
+            Position::Fourth => "4",
+            Position::Fifth => "5",
+            Position::Sixth => "6",
+            Position::Seventh => "7",
+            Position::Eighth => "8",
+            Position::Ninth => "9",
+            Position::Tenth => "10",
+            Position::Eleventh => "11",
+            Position::Twelfth => "12",
         };
         write!(f, "{}", text)
     }

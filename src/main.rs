@@ -68,8 +68,8 @@ async fn run_consumer(mut rx: mpsc::Receiver<ImageBuffer<Rgb<u8>, Vec<u8>>>) -> 
         if mogi != last_mogi_state {
             println!("mogi: {:?}", mogi);
             last_mogi_state = mogi.clone();
-            let mut file = File::create("result.txt").unwrap();
-            file.write_all(format!("{}", mogi).as_bytes()).unwrap();
+            let mut file = File::create("result.txt")?;
+            file.write_all(format!("{mogi}").as_bytes())?;
         }
         i += 1;
     }

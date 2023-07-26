@@ -90,7 +90,7 @@ impl Detector for RaceFinishDetector {
     async fn detect(
         mut self: Box<Self>,
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
-        mogi_result: &mut MogiResult,
+        _mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
         println!("RaceFinishDetector");
         for (i, (x, y)) in FLAG_CHECK_PATTERN.into_iter().enumerate() {

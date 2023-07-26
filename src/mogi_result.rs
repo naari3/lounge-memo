@@ -34,9 +34,12 @@ impl MogiResult {
 
 impl Display for MogiResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for race in &self.races {
-            writeln!(f, "{}", race)?;
+        for (i, race) in self.races.iter().enumerate() {
+            writeln!(f, "{:02}: {race}", i + 1)?;
         }
+        writeln!(f, "---")?;
+        let total_score = &self.races.iter().map(|r| r.to_score()).sum::<u32>();
+        writeln!(f, "total score: {total_score}")?;
         Ok(())
     }
 }
