@@ -2,7 +2,10 @@ use async_trait::async_trait;
 use image::{ImageBuffer, Luma, Pixel, Rgb};
 use template_matching::{find_extremes, MatchTemplateMethod, TemplateMatcher};
 
-use crate::{detector::PositionDetector, mogi_result::MogiResult};
+use crate::{
+    detector::{CourseDetector, PositionDetector},
+    mogi_result::MogiResult,
+};
 
 use super::Detector;
 
@@ -93,7 +96,9 @@ impl Detector for RaceFinishDetector {
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
         println!("RaceFinishDetector");
-        self.detect_error(buffer, mogi_result).await?;
+        if self.detect_error(buffer, mogi_result).await? {
+            return Ok(Box::new(CourseDetector));
+        }
 
         for (i, (x, y)) in FLAG_CHECK_PATTERN.into_iter().enumerate() {
             let pixel = buffer.get_pixel(x, y);

@@ -36,17 +36,22 @@ pub trait Detector {
             words_from_image_buffer(buffer, buffer.width() as _, buffer.height() as _).await?;
         let normalized_words = words
             .into_iter()
+            .filter(|w| w.text.len() >= 2)
             .map(|w| normalize_japanese_characters(w.text.replace(" ", "")))
             .collect::<Vec<String>>();
 
-        if normalized_words.contains(&normalize_japanese_characters("エラー".to_string()))
-            && normalized_words.contains(&normalize_japanese_characters("通信".to_string()))
-            && normalized_words.contains(&normalize_japanese_characters("はっせい".to_string()))
-            && normalized_words.contains(&normalize_japanese_characters("しました".to_string()))
-        {
-            println!("通信エラーが発生しました");
-            mogi_result.reset_current_course();
-            return Ok(true);
+        let mut error_count = 0;
+        for word in &normalized_words {
+            for error_word in &["エラー", "通信", "はっせい", "しました"] {
+                if word.contains(&normalize_japanese_characters(error_word.to_string())) {
+                    error_count += 1;
+                }
+                if error_count == 4 {
+                    println!("エラーが発生しました");
+                    mogi_result.reset_current_course();
+                    return Ok(true);
+                }
+            }
         }
         Ok(false)
     }
