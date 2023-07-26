@@ -72,6 +72,6 @@ fn is_yellow(pixel: &Rgb<u8>) -> bool {
     let b = channels[2];
     // 0xD0 = 208
     // 0xC8 = 200
-    // 0x60 = 96
-    r > 0xD0 && g > 0xC8 && b < 0x60
+    // 0x80 = 128
+    r > 0xD0 && g > 0xC8 && b < 0x80
 }
