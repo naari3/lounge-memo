@@ -223,14 +223,15 @@ fn get_series_by_words(words: &Vec<Word>) -> Series {
         if lower_text.contains("gc") {
             return Series::GC;
         }
+        // dsよりも3dsを先に判定する
+        if lower_text.contains("3ds") {
+            return Series::_3DS;
+        }
         if lower_text.contains("ds") {
             return Series::DS;
         }
         if lower_text.contains("wii") {
             return Series::Wii;
-        }
-        if lower_text.contains("3ds") {
-            return Series::_3DS;
         }
         if lower_text.contains("tour") {
             return Series::Tour;
@@ -255,7 +256,7 @@ pub fn get_course_by_words(words: &Vec<Word>) -> Option<Course> {
     return None;
 }
 
-fn normalize_japanese_characters(text: String) -> String {
+pub fn normalize_japanese_characters(text: String) -> String {
     let mut normalized = text.replace("ー", "ー");
     // 全角英数字を半角英数字に変換
     normalized = normalized.replace("０", "0");
@@ -444,6 +445,56 @@ fn normalize_japanese_characters(text: String) -> String {
     normalized = normalized.replace("ョ", "ヨ");
     normalized = normalized.replace("ヮ", "ワ");
     normalized = normalized.replace("ヵ", "カ");
+    // 工→エ
+    normalized = normalized.replace("工", "エ");
+
+    normalized = normalized.to_lowercase();
 
     return normalized;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_japanese_characters() {
+        assert_eq!(
+            normalize_japanese_characters("あがぱ工EｅＥ".to_string()),
+            "アカハエeee".to_string()
+        );
+    }
+
+    #[test]
+    fn test_get_course_by_words() {
+        fn vec_str_to_words(words: Vec<&str>) -> Vec<Word> {
+            let mut vec = Vec::new();
+            for word in words {
+                vec.push(Word::new(word.to_string(), 0.0, 0.0, 0.0, 0.0));
+            }
+            vec
+        }
+        fn assert_vec_str_to_course(words: Vec<&str>, expected: Course) {
+            let words = vec_str_to_words(words);
+            let course = get_course_by_words(&words);
+            assert_eq!(course, Some(expected));
+        }
+
+        assert_vec_str_to_course(
+            vec!["ヨッシーサーキット", "GC"],
+            Course::new("ヨッシーサーキット".to_string(), Series::GC),
+        );
+        assert_vec_str_to_course(
+            vec!["ロックロックマウンテン", "3DS"],
+            Course::new("ロックロックマウンテン".to_string(), Series::_3DS),
+        );
+        assert_vec_str_to_course(
+            vec!["キノヒオサーキット", "3DS"],
+            Course::new("キノピオサーキット".to_string(), Series::_3DS),
+        );
+        assert_vec_str_to_course(
+            vec!["どうぶつの森"],
+            Course::new("どうぶつの森".to_string(), Series::New),
+        );
+    }
 }

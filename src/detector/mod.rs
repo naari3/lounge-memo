@@ -8,6 +8,7 @@ use windows::{
     Win32::System::WinRT::IMemoryBufferByteAccess,
 };
 
+use crate::courses::normalize_japanese_characters;
 use crate::{mogi_result::MogiResult, word::Word};
 
 mod course_detector;
@@ -25,6 +26,30 @@ pub trait Detector {
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>>;
+
+    async fn detect_error(
+        &self,
+        buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
+        mogi_result: &mut MogiResult,
+    ) -> anyhow::Result<bool> {
+        let words =
+            words_from_image_buffer(buffer, buffer.width() as _, buffer.height() as _).await?;
+        let normalized_words = words
+            .into_iter()
+            .map(|w| normalize_japanese_characters(w.text.replace(" ", "")))
+            .collect::<Vec<String>>();
+
+        if normalized_words.contains(&normalize_japanese_characters("エラー".to_string()))
+            && normalized_words.contains(&normalize_japanese_characters("通信".to_string()))
+            && normalized_words.contains(&normalize_japanese_characters("はっせい".to_string()))
+            && normalized_words.contains(&normalize_japanese_characters("しました".to_string()))
+        {
+            println!("通信エラーが発生しました");
+            mogi_result.reset_current_course();
+            return Ok(true);
+        }
+        Ok(false)
+    }
 }
 
 fn make_bmp(buffer: &[u8], width: i32, height: i32) -> anyhow::Result<SoftwareBitmap> {

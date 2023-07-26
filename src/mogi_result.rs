@@ -30,6 +30,10 @@ impl MogiResult {
         self.races.push(race);
         self.current_course = None;
     }
+
+    pub fn reset_current_course(&mut self) {
+        self.current_course = None;
+    }
 }
 
 impl Display for MogiResult {

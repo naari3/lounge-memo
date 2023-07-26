@@ -23,6 +23,7 @@ impl Detector for PositionDetector {
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
         println!("PositionDetector");
+        self.detect_error(buffer, mogi_result).await?;
 
         // sample pixel of each line, and check if it's yellow or not
         let sample_pixels = (0..LINES)

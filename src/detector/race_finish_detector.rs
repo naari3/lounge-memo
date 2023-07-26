@@ -90,9 +90,11 @@ impl Detector for RaceFinishDetector {
     async fn detect(
         mut self: Box<Self>,
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
-        _mogi_result: &mut MogiResult,
+        mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
         println!("RaceFinishDetector");
+        self.detect_error(buffer, mogi_result).await?;
+
         for (i, (x, y)) in FLAG_CHECK_PATTERN.into_iter().enumerate() {
             let pixel = buffer.get_pixel(x, y);
             let channels = pixel.channels();

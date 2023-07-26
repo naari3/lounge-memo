@@ -29,6 +29,7 @@ impl Detector for CourseDetector {
                 return Ok(self);
             }
         };
+        // println!("words: {:?}", &words);
         let for_course_texts = words
             .into_iter()
             .filter(filter_for_course_texts)
