@@ -23,7 +23,8 @@ impl Display for RaceResult {
         if let Some(course) = &self.course {
             write!(f, "{}\t", course)?;
         }
-        write!(f, "{}", self.position)
+        write!(f, "{}\t", self.position)?;
+        write!(f, "{}", self.to_score())
     }
 }
 

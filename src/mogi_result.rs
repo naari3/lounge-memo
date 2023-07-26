@@ -38,10 +38,14 @@ impl MogiResult {
 
 impl Display for MogiResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let current_course = self.current_course.clone();
         for (i, race) in self.races.iter().enumerate() {
-            writeln!(f, "{:02}: {race}", i + 1)?;
+            writeln!(f, "{:02}\t{race}", i + 1)?;
         }
         writeln!(f, "---")?;
+        if let Some(current_course) = current_course {
+            writeln!(f, "current course: {}", current_course)?;
+        }
         let total_score = &self.races.iter().map(|r| r.to_score()).sum::<u32>();
         writeln!(f, "total score: {total_score}")?;
         Ok(())

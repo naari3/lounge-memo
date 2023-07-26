@@ -98,13 +98,13 @@ async fn words_from_image_buffer(
         words.into_iter().for_each(|word| {
             let rect = word.BoundingRect().unwrap();
             let name = &word.Text().unwrap().to_string_lossy();
-            collected_words.push(Word {
-                x: rect.X.into(),
-                y: rect.Y.into(),
-                text: name.to_string(),
-                height: rect.Height.into(),
-                width: rect.Width.into(),
-            });
+            collected_words.push(Word::new(
+                name.to_string(),
+                rect.X.into(),
+                rect.Y.into(),
+                rect.Height.into(),
+                rect.Width.into(),
+            ));
             if idx == 0 {
                 _x = rect.X as f64;
             }
