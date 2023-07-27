@@ -27,6 +27,7 @@ pub struct RaceFinishDetector {
     results_image: ImageBuffer<Luma<f32>, Vec<f32>>,
     results_mask_image: ImageBuffer<Luma<f32>, Vec<f32>>,
     results_matcher: TemplateMatcher,
+    on_results_vec: Vec<bool>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,13 +50,11 @@ impl RaceFinishDetector {
             .unwrap()
             .to_luma32f(),
             results_matcher: TemplateMatcher::new(),
+            on_results_vec: Vec::new(),
         }
     }
 
-    fn is_on_result_with_match_template(
-        &mut self,
-        input: &ImageBuffer<Luma<f32>, Vec<f32>>,
-    ) -> bool {
+    fn eval_on_result_with_match_template(&mut self, input: &ImageBuffer<Luma<f32>, Vec<f32>>) {
         self.results_matcher.match_template_mask(
             input,
             &self.results_image,
@@ -79,11 +78,24 @@ impl RaceFinishDetector {
                 && extremes.max_value_location.0 <= location_offset_x_max
             {
                 if extremes.max_value_location.1 >= 42 && extremes.max_value_location.1 <= 57 {
-                    return true;
+                    self.on_results_vec.push(true);
+                    if self.on_results_vec.len() > 5 {
+                        self.on_results_vec.remove(0);
+                        return;
+                    }
                 }
             }
         }
-        false
+        self.on_results_vec.push(false);
+        if self.on_results_vec.len() > 5 {
+            self.on_results_vec.remove(0);
+        }
+    }
+
+    fn is_on_result(&self) -> bool {
+        println!("on_results_vec: {:?}", self.on_results_vec);
+        // もし配列の中にtrueが4つ以上あれば、レース結果画面にいると判断する
+        self.on_results_vec.iter().filter(|b| **b).count() >= 4
     }
 }
 
@@ -120,9 +132,11 @@ impl Detector for RaceFinishDetector {
                 }
             }
         }
+
         let input = image::DynamicImage::ImageRgb8(buffer.clone());
         let input = input.to_luma32f();
-        if self.is_on_result_with_match_template(&input) {
+        self.eval_on_result_with_match_template(&input);
+        if self.is_on_result() {
             return Ok(Box::new(PositionDetector::new()));
         }
         Ok(self)
