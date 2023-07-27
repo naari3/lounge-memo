@@ -8,6 +8,13 @@ use super::{words_from_image_buffer, Detector};
 
 pub struct CourseDetector;
 
+impl CourseDetector {
+    pub fn new() -> CourseDetector {
+        println!("CourseDetector");
+        CourseDetector
+    }
+}
+
 #[async_trait]
 impl Detector for CourseDetector {
     async fn detect(
@@ -15,7 +22,6 @@ impl Detector for CourseDetector {
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
-        println!("CourseDetector");
         let words = match words_from_image_buffer(
             buffer,
             buffer.width().try_into()?,

@@ -10,6 +10,13 @@ use image::{ImageBuffer, Pixel};
 
 pub struct PositionDetector;
 
+impl PositionDetector {
+    pub fn new() -> PositionDetector {
+        println!("PositionDetector");
+        PositionDetector
+    }
+}
+
 const LINE_HEIGHT: f64 = (78.0 / 1080.0) * HEIGHT as f64;
 const LINES: usize = 12;
 const LINES_SAMPLE_OFFSET_Y: f64 = 81.0 / 1080.0 * HEIGHT as f64;
@@ -22,9 +29,8 @@ impl Detector for PositionDetector {
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
-        println!("PositionDetector");
         if self.detect_error(buffer, mogi_result).await? {
-            return Ok(Box::new(CourseDetector));
+            return Ok(Box::new(CourseDetector::new()));
         }
 
         // sample pixel of each line, and check if it's yellow or not
@@ -54,7 +60,7 @@ impl Detector for PositionDetector {
         if let Some(yellow_line_index) = yellow_line_index {
             let position = Position::from_index(yellow_line_index);
             mogi_result.set_current_position(position);
-            return Ok(Box::new(CourseDetector));
+            return Ok(Box::new(CourseDetector::new()));
         }
 
         Ok(self)

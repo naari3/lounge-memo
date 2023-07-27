@@ -37,6 +37,7 @@ pub enum RaceKind {
 
 impl RaceFinishDetector {
     pub fn new() -> RaceFinishDetector {
+        println!("RaceFinishDetector");
         RaceFinishDetector {
             race_kind: RaceKind::Internet,
             results_image: image::load_from_memory(include_bytes!("../assets/results.png"))
@@ -62,16 +63,14 @@ impl RaceFinishDetector {
             MatchTemplateMethod::SumOfSquaredDifferences,
         );
         let results = self.results_matcher.wait_for_result();
-        let location_offset_x_min = if self.race_kind == RaceKind::Internet {
-            558
-        } else {
-            595
+        let location_offset_x_min = match self.race_kind {
+            RaceKind::Internet => 558,
+            RaceKind::Local => 595,
         };
         // let location_offset_x_max = 605;
-        let location_offset_x_max = if self.race_kind == RaceKind::Internet {
-            568
-        } else {
-            605
+        let location_offset_x_max = match self.race_kind {
+            RaceKind::Internet => 568,
+            RaceKind::Local => 605,
         };
         if let Some(results) = results {
             let extremes = find_extremes(&results);
@@ -95,9 +94,8 @@ impl Detector for RaceFinishDetector {
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
-        println!("RaceFinishDetector");
         if self.detect_error(buffer, mogi_result).await? {
-            return Ok(Box::new(CourseDetector));
+            return Ok(Box::new(CourseDetector::new()));
         }
 
         for (i, (x, y)) in FLAG_CHECK_PATTERN.into_iter().enumerate() {
@@ -125,7 +123,7 @@ impl Detector for RaceFinishDetector {
         let input = image::DynamicImage::ImageRgb8(buffer.clone());
         let input = input.to_luma32f();
         if self.is_on_result_with_match_template(&input) {
-            return Ok(Box::new(PositionDetector));
+            return Ok(Box::new(PositionDetector::new()));
         }
         Ok(self)
     }
