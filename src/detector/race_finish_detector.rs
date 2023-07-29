@@ -33,6 +33,7 @@ pub struct RaceFinishDetector {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RaceKind {
     Internet,
+    #[allow(dead_code)]
     Local,
 }
 
