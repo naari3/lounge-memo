@@ -1,27 +1,59 @@
 use crate::detector::RaceFinishDetector;
+use crate::HEIGHT;
 use crate::{courses::get_course_by_words, mogi_result::MogiResult, word::Word, WIDTH};
 use async_trait::async_trait;
-use image::ImageBuffer;
 use image::Rgb;
+use image::{ImageBuffer, Luma};
 
 use super::{words_from_image_buffer, Detector};
 
-pub struct CourseDetector;
+pub struct CourseDetector {
+    on_results_vec: Vec<bool>,
+}
 
 impl CourseDetector {
     pub fn new() -> CourseDetector {
         println!("CourseDetector");
-        CourseDetector
+        CourseDetector {
+            on_results_vec: Vec::new(),
+        }
+    }
+
+    fn eval_on_course_wait_room(&mut self, input: &ImageBuffer<Luma<f32>, Vec<f32>>) {
+        let result = input.pixels().take(WIDTH * 50).all(|p| p.0[0] < 0.1);
+        if result {
+            self.on_results_vec.push(true);
+            if self.on_results_vec.len() > 5 {
+                self.on_results_vec.remove(0);
+                return;
+            }
+        }
+        self.on_results_vec.push(false);
+        if self.on_results_vec.len() > 5 {
+            self.on_results_vec.remove(0);
+        }
+    }
+
+    fn is_on_course_wait_room(&self) -> bool {
+        self.on_results_vec.iter().all(|b| *b)
     }
 }
 
 #[async_trait]
 impl Detector for CourseDetector {
     async fn detect(
-        self: Box<Self>,
+        mut self: Box<Self>,
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
+        // TODO: まだ実行していないので明日実行してみる
+        let input = image::DynamicImage::ImageRgb8(buffer.clone());
+        let input = input.to_luma32f();
+        self.eval_on_course_wait_room(&input);
+        if !self.is_on_course_wait_room() {
+            return Ok(self);
+        }
+
         let words = match words_from_image_buffer(
             buffer,
             buffer.width().try_into()?,
@@ -35,7 +67,9 @@ impl Detector for CourseDetector {
                 return Ok(self);
             }
         };
-        // println!("words: {:?}", &words);
+        if words.len() > 0 {
+            println!("words: {:?}", &words);
+        }
         let for_course_texts = words
             .into_iter()
             .filter(filter_for_course_texts)
@@ -58,13 +92,13 @@ impl Detector for CourseDetector {
 
 fn filter_for_course_texts(word: &Word) -> bool {
     // コース名は画面下部にあるので、上部の文字は除外
-    let lower: f64 = 950.0 / 1920.0 * (WIDTH as f64);
+    let lower: f64 = 950.0 / 1080.0 * (HEIGHT as f64);
     if word.y < lower {
         return false;
     }
 
-    // 7文字以上の場合、コース名っぽいので通す
-    if word.text.chars().count() > 6 {
+    // 6文字以上の場合、コース名っぽいので通す
+    if word.text.chars().count() >= 6 {
         return true;
     }
 

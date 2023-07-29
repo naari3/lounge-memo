@@ -9,6 +9,7 @@ use crate::{
 pub struct MogiResult {
     races: Vec<RaceResult>,
     current_course: Option<Course>,
+    created_at: chrono::DateTime<chrono::Local>,
 }
 
 impl MogiResult {
@@ -16,6 +17,7 @@ impl MogiResult {
         MogiResult {
             races: Vec::new(),
             current_course: None,
+            created_at: chrono::Local::now(),
         }
     }
 
@@ -38,6 +40,22 @@ impl MogiResult {
 
     pub fn total_score(&self) -> u32 {
         self.races.iter().map(|r| r.to_score()).sum::<u32>()
+    }
+
+    pub fn save_image(&self, buffer: &image::RgbImage) -> anyhow::Result<()> {
+        let now = chrono::Local::now();
+        let path = format!(
+            "results/{}/{}.png",
+            self.created_at.format("%Y%m%d-%H%M%S").to_string(),
+            now.format("%Y%m%d-%H%M%S").to_string()
+        );
+        // ディレクトリがなければ作る
+        std::fs::create_dir_all(format!(
+            "results/{}",
+            self.created_at.format("%Y%m%d-%H%M%S").to_string()
+        ))?;
+        buffer.save(path)?;
+        Ok(())
     }
 }
 

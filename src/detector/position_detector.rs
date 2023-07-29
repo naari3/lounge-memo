@@ -8,13 +8,8 @@ use crate::{mogi_result::MogiResult, WIDTH};
 use image::Rgb;
 use image::{ImageBuffer, Pixel};
 
-pub struct PositionDetector;
-
-impl PositionDetector {
-    pub fn new() -> PositionDetector {
-        println!("PositionDetector");
-        PositionDetector
-    }
+pub struct PositionDetector {
+    positions_vec: Vec<Position>,
 }
 
 const LINE_HEIGHT: f64 = (78.0 / 1080.0) * HEIGHT as f64;
@@ -22,10 +17,19 @@ const LINES: usize = 12;
 const LINES_SAMPLE_OFFSET_Y: f64 = 81.0 / 1080.0 * HEIGHT as f64;
 const LINES_SAMPLE_OFFSET_X: f64 = WIDTH as f64 - (220.0 / 1920.0 * WIDTH as f64);
 
+impl PositionDetector {
+    pub fn new() -> PositionDetector {
+        println!("PositionDetector");
+        PositionDetector {
+            positions_vec: Vec::new(),
+        }
+    }
+}
+
 #[async_trait]
 impl Detector for PositionDetector {
     async fn detect(
-        self: Box<Self>,
+        mut self: Box<Self>,
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
@@ -49,18 +53,35 @@ impl Detector for PositionDetector {
             })
             .collect::<Vec<Vec<Rgb<u8>>>>();
 
-        println!("sample_pixels: {:?}", sample_pixels);
-
         // check which index pixels is yellow zone.
         let yellow_line_index = sample_pixels
             .into_iter()
             .enumerate()
             .find(|(_, p)| is_yellow_zone(p))
             .map(|(i, _)| i);
+
         if let Some(yellow_line_index) = yellow_line_index {
             let position = Position::from_index(yellow_line_index);
             mogi_result.set_current_position(position);
-            return Ok(Box::new(CourseDetector::new()));
+            self.positions_vec.push(position);
+            // すべて同じPositionだったら
+            if self.positions_vec.len() >= 4
+                && self
+                    .positions_vec
+                    .iter()
+                    .all(|p| *p == self.positions_vec[0])
+            {
+                mogi_result.save_image(buffer)?;
+                return Ok(Box::new(CourseDetector::new()));
+            }
+            // ひとつでも違うPositionがあったら
+            if self
+                .positions_vec
+                .iter()
+                .any(|p| *p != self.positions_vec[0])
+            {
+                self.positions_vec.clear();
+            }
         }
 
         Ok(self)

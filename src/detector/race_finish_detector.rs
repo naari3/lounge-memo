@@ -62,8 +62,8 @@ impl RaceFinishDetector {
             MatchTemplateMethod::SumOfSquaredDifferences,
         );
         let results = self.results_matcher.wait_for_result();
-        let location_offset_x_min = match self.race_kind {
-            RaceKind::Internet => 558,
+        let location_offset_x_min: u32 = match self.race_kind {
+            RaceKind::Internet => 555,
             RaceKind::Local => 595,
         };
         // let location_offset_x_max = 605;
@@ -79,7 +79,7 @@ impl RaceFinishDetector {
             {
                 if extremes.max_value_location.1 >= 42 && extremes.max_value_location.1 <= 57 {
                     self.on_results_vec.push(true);
-                    if self.on_results_vec.len() > 5 {
+                    if self.on_results_vec.len() > 4 {
                         self.on_results_vec.remove(0);
                         return;
                     }
@@ -87,15 +87,14 @@ impl RaceFinishDetector {
             }
         }
         self.on_results_vec.push(false);
-        if self.on_results_vec.len() > 5 {
+        if self.on_results_vec.len() > 4 {
             self.on_results_vec.remove(0);
         }
     }
 
     fn is_on_result(&self) -> bool {
-        println!("on_results_vec: {:?}", self.on_results_vec);
-        // もし配列の中にtrueが4つ以上あれば、レース結果画面にいると判断する
-        self.on_results_vec.iter().filter(|b| **b).count() >= 4
+        // もし配列の中にtrueが3つ以上あれば、レース結果画面にいると判断する
+        self.on_results_vec.iter().filter(|b| **b).count() >= 3
     }
 }
 
@@ -120,15 +119,11 @@ impl Detector for RaceFinishDetector {
                 if r < 5 && g < 5 && b < 5 {
                     println!("flag is on view");
                     return Ok(self);
-                } else {
-                    println!("i = {}, r = {}, g = {}, b = {}", i, r, g, b);
                 }
             } else {
                 if r > 0xD0 && g > 0xD0 && b > 0xD0 {
                     println!("flag is on view");
                     return Ok(self);
-                } else {
-                    println!("i = {}, r = {}, g = {}, b = {}", i, r, g, b);
                 }
             }
         }
