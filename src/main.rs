@@ -17,10 +17,15 @@ pub const WIDTH: usize = 1280;
 pub const HEIGHT: usize = 720;
 
 async fn run_producer(tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>) -> anyhow::Result<()> {
+    // 引数から数字を取得する なければ0
+    let camera_index = std::env::args()
+        .nth(1)
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(0);
     println!("producer");
-    let camera = escapi::init(0, WIDTH as _, HEIGHT as _, 30).unwrap();
+    let camera = escapi::init(camera_index, WIDTH as _, HEIGHT as _, 30).unwrap();
     let (width, height) = (camera.capture_width(), camera.capture_height());
-    println!("camera: {}x{}", width, height);
+    println!("camera: {} {}x{}", camera.name(), width, height);
 
     loop {
         let pixels = camera.capture().expect("capture failed");
