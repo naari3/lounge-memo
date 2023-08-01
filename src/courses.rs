@@ -258,6 +258,9 @@ pub fn get_course_by_words(words: &Vec<Word>) -> Option<Course> {
 }
 
 pub fn get_course_by_words_with_nearest(words: &Vec<Word>, threshold: usize) -> Option<Course> {
+    if words.len() == 0 {
+        return None;
+    }
     let series = get_series_by_words(&words);
 
     let longest_word = words
@@ -279,7 +282,6 @@ pub fn get_course_by_words_with_nearest(words: &Vec<Word>, threshold: usize) -> 
             min_distance = distance;
             min_course_name = Some(course_name);
         }
-        println!("");
     }
     if min_distance > threshold {
         return None;

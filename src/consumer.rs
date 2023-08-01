@@ -18,6 +18,7 @@ impl Consumer {
         mogi_result: &mut MogiResult,
         mut rx: mpsc::Receiver<ImageBuffer<Rgb<u8>, Vec<u8>>>,
     ) -> anyhow::Result<()> {
+        log::info!("consumer");
         let mut a = FPSCounter::default();
         let mut i = 0;
         let mut last_mogi_state = mogi_result.clone();
@@ -28,17 +29,18 @@ impl Consumer {
             // let mut stdout = stdout();
             // execute!(stdout, Clear(ClearType::All), MoveTo(0, 0))?;
 
-            if i % 20 == 0 {
-                println!("fps: {:?}", a.tick());
+            if i % 60 == 0 {
+                log::debug!("fps: {:?}", a.tick());
             } else {
                 a.tick();
             }
             detector = detector.detect(&buffer, mogi_result).await?;
             if mogi_result != &last_mogi_state {
-                println!("mogi: {:?}", mogi_result);
+                log::debug!("mogi: {:?}", mogi_result);
                 last_mogi_state = mogi_result.clone();
                 let mut file = File::create("result.txt")?;
                 file.write_all(format!("{mogi_result}").as_bytes())?;
+                log::info!("updated result.txt");
             }
             i += 1;
         }
@@ -104,7 +106,7 @@ mod test {
                     rgb_frame.height(),
                     rgb_buffer.to_vec(),
                 ) {
-                    println!("frame_index: {}", frame_index);
+                    log::debug!("frame_index: {}", frame_index);
                     frames_vec.push(image_buffer);
                 }
                 *frame_index += 1;

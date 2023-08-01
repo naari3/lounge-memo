@@ -42,7 +42,7 @@ pub trait Detector {
                     error_count += 1;
                 }
                 if error_count == 4 {
-                    println!("エラーが発生しました");
+                    log::warn!("エラーが発生しました");
                     mogi_result.reset_current_course();
                     return Ok(true);
                 }

@@ -14,7 +14,7 @@ pub struct CourseDetector {
 
 impl CourseDetector {
     pub fn new() -> CourseDetector {
-        println!("CourseDetector");
+        log::debug!("CourseDetector");
         CourseDetector {
             on_results_vec: Vec::new(),
         }
@@ -64,12 +64,12 @@ impl Detector for CourseDetector {
         {
             Ok(w) => w,
             Err(e) => {
-                println!("Error: {:?}", e);
+                log::error!("Error: {:?}", e);
                 return Ok(self);
             }
         };
         if words.len() > 0 {
-            println!("words: {:?}", &words);
+            log::trace!("words: {:?}", &words);
         }
         let for_course_texts = words
             .into_iter()
@@ -77,18 +77,18 @@ impl Detector for CourseDetector {
             .collect::<Vec<Word>>();
 
         if for_course_texts.len() > 0 {
-            println!("for_course_texts: {:?}", &for_course_texts);
+            log::trace!("for_course_texts: {:?}", &for_course_texts);
         }
 
         let course = get_course_by_words(&for_course_texts);
         if let Some(course) = course {
-            println!("course: {:?}", &course);
+            log::debug!("course: {:?}", &course);
             mogi_result.set_current_course(course);
             return Ok(Box::new(RaceFinishDetector::new()));
         } else {
             let course = get_course_by_words_with_nearest(&for_course_texts, 4);
             if let Some(course) = course {
-                println!("course with nearest: {:?}", &course);
+                log::debug!("course with nearest: {:?}", &course);
                 mogi_result.set_current_course(course);
                 return Ok(Box::new(RaceFinishDetector::new()));
             }

@@ -16,16 +16,53 @@ mod word;
 pub const WIDTH: usize = 1280;
 pub const HEIGHT: usize = 720;
 
+fn init_logger() {
+    let base_config = fern::Dispatch::new();
+    let file_config = fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        // .level(log::LevelFilter::Trace)
+        .level(log::LevelFilter::Warn)
+        .level_for("lounge_memo", log::LevelFilter::Trace)
+        .chain(fern::log_file("output.log").unwrap());
+    let stdout_config = fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        // .level(log::LevelFilter::Trace)
+        .level(log::LevelFilter::Warn)
+        .level_for("lounge_memo", log::LevelFilter::Info)
+        .chain(std::io::stdout());
+    base_config
+        .chain(file_config)
+        .chain(stdout_config)
+        .apply()
+        .unwrap();
+}
+
 async fn run_producer(tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>) -> anyhow::Result<()> {
     // 引数から数字を取得する なければ0
     let camera_index = std::env::args()
         .nth(1)
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(0);
-    println!("producer");
+    log::info!("producer");
     let camera = escapi::init(camera_index, WIDTH as _, HEIGHT as _, 30).unwrap();
     let (width, height) = (camera.capture_width(), camera.capture_height());
-    println!("camera: {} {}x{}", camera.name(), width, height);
+    log::info!("camera: {} {}x{}", camera.name(), width, height);
 
     loop {
         let pixels = camera.capture().expect("capture failed");
@@ -41,7 +78,7 @@ async fn run_producer(tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>) -> anyhow
         match tx.send(img).await {
             Ok(_) => {}
             Err(e) => {
-                eprintln!("error: {}", e);
+                log::error!("error: {}", e);
                 break;
             }
         }
@@ -51,6 +88,8 @@ async fn run_producer(tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>) -> anyhow
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    init_logger();
+
     let (tx, rx) = mpsc::channel(10);
 
     let producer = task::spawn(async move {

@@ -39,7 +39,7 @@ pub enum RaceKind {
 
 impl RaceFinishDetector {
     pub fn new() -> RaceFinishDetector {
-        println!("RaceFinishDetector");
+        log::info!("RaceFinishDetector");
         RaceFinishDetector {
             race_kind: RaceKind::Internet,
             results_image: image::load_from_memory(include_bytes!("../assets/results.png"))
@@ -74,7 +74,7 @@ impl RaceFinishDetector {
         };
         if let Some(results) = results {
             let extremes = find_extremes(&results);
-            println!("results: {:?}", extremes.max_value_location);
+            log::trace!("results: {:?}", extremes.max_value_location);
             if extremes.max_value_location.0 >= location_offset_x_min
                 && extremes.max_value_location.0 <= location_offset_x_max
             {
@@ -118,12 +118,12 @@ impl Detector for RaceFinishDetector {
             let b = channels[2];
             if (i % 2) == 0 {
                 if r < 5 && g < 5 && b < 5 {
-                    println!("flag is on view");
+                    log::trace!("flag is on view");
                     return Ok(self);
                 }
             } else {
                 if r > 0xD0 && g > 0xD0 && b > 0xD0 {
-                    println!("flag is on view");
+                    log::trace!("flag is on view");
                     return Ok(self);
                 }
             }

@@ -19,7 +19,7 @@ const LINES_SAMPLE_OFFSET_X: f64 = WIDTH as f64 - (220.0 / 1920.0 * WIDTH as f64
 
 impl PositionDetector {
     pub fn new() -> PositionDetector {
-        println!("PositionDetector");
+        log::info!("PositionDetector");
         PositionDetector {
             positions_vec: Vec::new(),
         }
@@ -44,9 +44,9 @@ impl Detector for PositionDetector {
                 let x = LINES_SAMPLE_OFFSET_X;
                 let y_offset = LINES_SAMPLE_OFFSET_Y + LINE_HEIGHT * i as f64;
                 let mut pixels = Vec::new();
-                println!("index: {}", index);
+                log::trace!("index: {}", index);
                 for y in (y_offset as u32)..(y_offset as u32) + 5 {
-                    println!("x: {}, y: {}", x, y);
+                    log::trace!("x: {}, y: {}", x, y);
                     pixels.push(buffer.get_pixel(x as u32, y as u32).clone());
                 }
                 pixels
