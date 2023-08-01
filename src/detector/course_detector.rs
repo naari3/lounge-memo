@@ -82,13 +82,13 @@ impl Detector for CourseDetector {
 
         let course = get_course_by_words(&for_course_texts);
         if let Some(course) = course {
-            log::debug!("course: {:?}", &course);
+            log::info!("course: {course}");
             mogi_result.set_current_course(course);
             return Ok(Box::new(RaceFinishDetector::new()));
         } else {
             let course = get_course_by_words_with_nearest(&for_course_texts, 4);
             if let Some(course) = course {
-                log::debug!("course with nearest: {:?}", &course);
+                log::info!("course with nearest: {course}");
                 mogi_result.set_current_course(course);
                 return Ok(Box::new(RaceFinishDetector::new()));
             }

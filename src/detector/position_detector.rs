@@ -71,6 +71,7 @@ impl Detector for PositionDetector {
                     .iter()
                     .all(|p| *p == self.positions_vec[0])
             {
+                log::info!("position: {position}");
                 mogi_result.save_image(buffer)?;
                 return Ok(Box::new(CourseDetector::new()));
             }
