@@ -26,6 +26,7 @@ tokio = { version = "1.29", features = [
 ] }
 fps_counter = "2.0.0"
 chrono = "0.4.26"
+strsim = "0.10.0"
 
 [dev-dependencies]
 ffmpeg-next = { version = "6.0.0" }

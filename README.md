@@ -34,10 +34,8 @@ cargo run --release -- [CAPTURE DEVICE NUMBER (default 0)]
   - CourseDetectorが失敗してもRaceFinishDetectorに移る、など
   - dyn Detector に対して実装？
 - 認識しないコースがある
-  - OCRの期限が悪いと失敗する
-  - 認識方法を変える
-    - 文字列の合否割合をとって許容度を上げる
   - どうにか外部から情報を修正する方法を用意する？
+    - 右下にあるコースプレビューの一致度などから
 - まともなフォーマットでテキストに書き出す
 - スプシ連携したい
   - 方法案

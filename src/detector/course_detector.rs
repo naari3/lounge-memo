@@ -1,3 +1,4 @@
+use crate::courses::get_course_by_words_with_nearest;
 use crate::detector::RaceFinishDetector;
 use crate::HEIGHT;
 use crate::{courses::get_course_by_words, mogi_result::MogiResult, word::Word, WIDTH};
@@ -84,6 +85,13 @@ impl Detector for CourseDetector {
             println!("course: {:?}", &course);
             mogi_result.set_current_course(course);
             return Ok(Box::new(RaceFinishDetector::new()));
+        } else {
+            let course = get_course_by_words_with_nearest(&for_course_texts, 4);
+            if let Some(course) = course {
+                println!("course with nearest: {:?}", &course);
+                mogi_result.set_current_course(course);
+                return Ok(Box::new(RaceFinishDetector::new()));
+            }
         }
 
         Ok(self)

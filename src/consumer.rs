@@ -25,9 +25,13 @@ impl Consumer {
         // let mut detector: Box<dyn Detector + Send + Sync> = Box::new(RaceFinishDetector::new());
         // let mut detector: Box<dyn Detector + Send + Sync> = Box::new(PositionDetector::new());
         while let Some(buffer) = rx.recv().await {
-            a.tick();
-            if i % 10 == 0 {
-                println!("{:?}", a.tick());
+            // let mut stdout = stdout();
+            // execute!(stdout, Clear(ClearType::All), MoveTo(0, 0))?;
+
+            if i % 20 == 0 {
+                println!("fps: {:?}", a.tick());
+            } else {
+                a.tick();
             }
             detector = detector.detect(&buffer, mogi_result).await?;
             if mogi_result != &last_mogi_state {

@@ -2,6 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
+use strsim::levenshtein;
 
 use crate::word::{normalize_japanese_characters, Word};
 
@@ -256,6 +257,40 @@ pub fn get_course_by_words(words: &Vec<Word>) -> Option<Course> {
     return None;
 }
 
+pub fn get_course_by_words_with_nearest(words: &Vec<Word>, threshold: usize) -> Option<Course> {
+    let series = get_series_by_words(&words);
+
+    let longest_word = words
+        .iter()
+        .max_by(|w1, w2| w1.text.len().cmp(&w2.text.len()))
+        .unwrap();
+    let normalized_longest_word = normalize_japanese_characters(longest_word.text.clone());
+
+    let binding = COURSES_SERIES_MAP_MAP.lock().unwrap();
+    let course_map = binding.get(&series).unwrap();
+    let course_names = course_map.keys().collect::<Vec<&String>>();
+    // レーベンシュタイン距離が最小のコースを探す
+    let mut min_distance = std::usize::MAX;
+    let mut min_course_name = None;
+    for course_name in course_names {
+        let normalized_course_name = normalize_japanese_characters(course_name.to_string());
+        let distance = levenshtein(&normalized_longest_word, &normalized_course_name);
+        if distance < min_distance {
+            min_distance = distance;
+            min_course_name = Some(course_name);
+        }
+        println!("");
+    }
+    if min_distance > threshold {
+        return None;
+    }
+    if let Some(min_course_name) = min_course_name {
+        return course_map.get(min_course_name).cloned();
+    }
+
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -268,21 +303,26 @@ mod tests {
         );
     }
 
+    fn vec_str_to_words(words: Vec<&str>) -> Vec<Word> {
+        let mut vec = Vec::new();
+        for word in words {
+            vec.push(Word::new(word.to_string(), 0.0, 0.0, 0.0, 0.0));
+        }
+        vec
+    }
+    fn assert_vec_str_to_course(words: Vec<&str>, expected: Course) {
+        let words = vec_str_to_words(words);
+        let course = get_course_by_words(&words);
+        assert_eq!(course, Some(expected));
+    }
+    fn assert_vec_str_to_course_with_nearest(words: Vec<&str>, expected: Option<Course>) {
+        let words = vec_str_to_words(words);
+        let course = get_course_by_words_with_nearest(&words, 4);
+        assert_eq!(course, expected);
+    }
+
     #[test]
     fn test_get_course_by_words() {
-        fn vec_str_to_words(words: Vec<&str>) -> Vec<Word> {
-            let mut vec = Vec::new();
-            for word in words {
-                vec.push(Word::new(word.to_string(), 0.0, 0.0, 0.0, 0.0));
-            }
-            vec
-        }
-        fn assert_vec_str_to_course(words: Vec<&str>, expected: Course) {
-            let words = vec_str_to_words(words);
-            let course = get_course_by_words(&words);
-            assert_eq!(course, Some(expected));
-        }
-
         assert_vec_str_to_course(
             vec!["ヨッシーサーキット", "GC"],
             Course::new("ヨッシーサーキット".to_string(), Series::GC),
@@ -303,5 +343,36 @@ mod tests {
             vec!["どうぶつの森"],
             Course::new("どうぶつの森".to_string(), Series::New),
         );
+    }
+
+    #[test]
+    fn test_get_course_by_words_with_nearest() {
+        assert_vec_str_to_course_with_nearest(
+            vec!["ヨッシーサーキット", "GC"],
+            Some(Course::new("ヨッシーサーキット".to_string(), Series::GC)),
+        );
+        assert_vec_str_to_course_with_nearest(
+            vec!["ックロックマウンテン", "3DS"],
+            Some(Course::new(
+                "ロックロックマウンテン".to_string(),
+                Series::_3DS,
+            )),
+        );
+        assert_vec_str_to_course_with_nearest(
+            vec!["ノヒオサーキット", "3DS"],
+            Some(Course::new("キノピオサーキット".to_string(), Series::_3DS)),
+        );
+        assert_vec_str_to_course_with_nearest(
+            vec!["うぶつの森"],
+            Some(Course::new("どうぶつの森".to_string(), Series::New)),
+        );
+        assert_vec_str_to_course_with_nearest(
+            vec!["ーユーヨークドリーム", "Tour"],
+            Some(Course::new(
+                "ニューヨークドリーム".to_string(),
+                Series::Tour,
+            )),
+        );
+        assert_vec_str_to_course_with_nearest(vec!["あまりにもかけ離れている場合", "Tour"], None);
     }
 }
