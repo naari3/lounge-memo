@@ -6,10 +6,12 @@ use crate::mogi_result::MogiResult;
 use crate::word::normalize_japanese_characters;
 use crate::word::words_from_image_buffer;
 
+mod capture_total_scores_detector;
 mod course_detector;
 mod position_detector;
 mod race_finish_detector;
 
+pub use capture_total_scores_detector::CaptureTotalScoresDetector;
 pub use course_detector::CourseDetector;
 pub use position_detector::PositionDetector;
 pub use race_finish_detector::RaceFinishDetector;

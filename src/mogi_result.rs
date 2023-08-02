@@ -42,12 +42,12 @@ impl MogiResult {
         self.races.iter().map(|r| r.to_score()).sum::<u32>()
     }
 
-    pub fn save_image(&self, buffer: &image::RgbImage) -> anyhow::Result<()> {
-        let now = chrono::Local::now();
+    pub fn save_result_image(&self, buffer: &image::RgbImage, prefix: &str) -> anyhow::Result<()> {
         let path = format!(
-            "results/{}/{}.png",
+            "results/{}/{}_{:02}.png",
             self.created_at.format("%Y%m%d-%H%M%S").to_string(),
-            now.format("%Y%m%d-%H%M%S").to_string()
+            prefix,
+            self.races.len(),
         );
         // ディレクトリがなければ作る
         std::fs::create_dir_all(format!(

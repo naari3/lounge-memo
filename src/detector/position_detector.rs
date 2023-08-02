@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use super::Detector;
-use crate::detector::CourseDetector;
+use crate::detector::{CaptureTotalScoresDetector, CourseDetector};
 use crate::race_result::Position;
 use crate::HEIGHT;
 use crate::{mogi_result::MogiResult, WIDTH};
@@ -46,8 +46,9 @@ impl Detector for PositionDetector {
                 let mut pixels = Vec::new();
                 log::trace!("index: {}", index);
                 for y in (y_offset as u32)..(y_offset as u32) + 5 {
-                    log::trace!("x: {}, y: {}", x, y);
-                    pixels.push(buffer.get_pixel(x as u32, y as u32).clone());
+                    let pixel = buffer.get_pixel(x as u32, y as u32).clone();
+                    log::trace!("x: {x}, y: {y}, color: {:?}", pixel.channels());
+                    pixels.push(pixel);
                 }
                 pixels
             })
@@ -72,8 +73,8 @@ impl Detector for PositionDetector {
                     .all(|p| *p == self.positions_vec[0])
             {
                 log::info!("position: {position}");
-                mogi_result.save_image(buffer)?;
-                return Ok(Box::new(CourseDetector::new()));
+                mogi_result.save_result_image(buffer, "race")?;
+                return Ok(Box::new(CaptureTotalScoresDetector::new()));
             }
             // ひとつでも違うPositionがあったら
             if self
