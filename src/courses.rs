@@ -319,7 +319,7 @@ mod tests {
     }
     fn assert_vec_str_to_course_with_nearest(words: Vec<&str>, expected: Option<Course>) {
         let words = vec_str_to_words(words);
-        let course = get_course_by_words_with_nearest(&words, 4);
+        let course = get_course_by_words_with_nearest(&words, 3);
         assert_eq!(course, expected);
     }
 
@@ -376,5 +376,6 @@ mod tests {
             )),
         );
         assert_vec_str_to_course_with_nearest(vec!["あまりにもかけ離れている場合", "Tour"], None);
+        assert_vec_str_to_course_with_nearest(vec!["キノコキャニオン"], None);
     }
 }

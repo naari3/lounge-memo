@@ -47,7 +47,6 @@ impl Detector for CourseDetector {
         buffer: &ImageBuffer<Rgb<u8>, Vec<u8>>,
         mogi_result: &mut MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
-        // TODO: まだ実行していないので明日実行してみる
         let input = image::DynamicImage::ImageRgb8(buffer.clone());
         let input = input.to_luma32f();
         self.eval_on_course_wait_room(&input);
@@ -86,7 +85,7 @@ impl Detector for CourseDetector {
             mogi_result.set_current_course(course);
             return Ok(Box::new(RaceFinishDetector::new()));
         } else {
-            let course = get_course_by_words_with_nearest(&for_course_texts, 4);
+            let course = get_course_by_words_with_nearest(&for_course_texts, 3);
             if let Some(course) = course {
                 log::info!("course with nearest: {course}");
                 mogi_result.set_current_course(course);
