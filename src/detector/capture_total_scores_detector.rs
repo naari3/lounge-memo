@@ -9,7 +9,7 @@ pub struct CaptureTotalScoresDetector {
 impl CaptureTotalScoresDetector {
     pub fn new() -> CaptureTotalScoresDetector {
         log::debug!("CaptureTotalScoresDetector");
-        CaptureTotalScoresDetector { delay_timer: 60 }
+        CaptureTotalScoresDetector { delay_timer: 120 }
     }
 }
 
