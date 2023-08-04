@@ -73,6 +73,7 @@ impl Detector for PositionDetector {
                     .all(|p| *p == self.positions_vec[0])
             {
                 log::info!("position: {position}");
+                log::info!("capture race results");
                 mogi_result.save_result_image(buffer, "race")?;
                 return Ok(Box::new(CaptureTotalScoresDetector::new()));
             }

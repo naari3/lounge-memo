@@ -31,17 +31,17 @@ enum OpenedIndex {
 struct OpenedRace {
     index: OpenedIndex,
     buffer: String,
-    position: Position,
+    position: Option<Position>,
     position_input: String,
 }
 
 impl OpenedRace {
-    fn new(index: OpenedIndex, course: Course, position: Position) -> Self {
+    fn new(index: OpenedIndex, course: Option<Course>, position: Option<Position>) -> Self {
         Self {
             index,
-            buffer: course.to_string(),
+            buffer: course.map(|c| c.to_string()).unwrap_or("".to_string()),
             position,
-            position_input: position.to_string(),
+            position_input: position.map(|p| p.to_string()).unwrap_or("".to_string()),
         }
     }
 }
@@ -120,15 +120,15 @@ fn edit_view(
                 if ui.button(race.course_name()).clicked() {
                     *opened_race = Some(OpenedRace::new(
                         OpenedIndex::Result(index),
-                        race.course().unwrap(),
-                        race.position(),
+                        race.course(),
+                        Some(race.position()),
                     ));
                 };
                 if ui.button(race.position().to_string()).clicked() {
                     *opened_race = Some(OpenedRace::new(
                         OpenedIndex::Result(index),
-                        race.course().unwrap(),
-                        race.position(),
+                        race.course(),
+                        Some(race.position()),
                     ));
                 };
             });
@@ -151,24 +151,29 @@ fn edit_view(
             }
         });
     ui.label("current course: ");
-    if let Some(current_course) = draft_mogi_result.current_course() {
-        if ui.button(current_course.to_string()).clicked() {
-            opened_race.replace(OpenedRace::new(
-                OpenedIndex::Current,
-                current_course.clone(),
-                Position::First,
-            ));
-        }
-        if let Some(OpenedRace {
-            index: OpenedIndex::Current,
-            buffer,
-            ..
-        }) = opened_race.as_mut()
-        {
-            ui.group(|ui| {
-                course_dropdown(ui, courses, buffer);
-            });
-        }
+    let current_course = draft_mogi_result.current_course().clone();
+    let label = current_course
+        .as_ref()
+        .map_or("(Empty)".to_string(), |course| course.to_string());
+    if ui.button(label).clicked() {
+        let course = current_course.map(|course| course.clone());
+        opened_race.replace(OpenedRace::new(OpenedIndex::Current, course, None));
+    }
+
+    if let Some(OpenedRace {
+        index: OpenedIndex::Current,
+        buffer,
+        position_input,
+        ..
+    }) = opened_race.as_mut()
+    {
+        ui.group(|ui| {
+            course_dropdown(ui, courses, buffer);
+            let response = ui.text_edit_singleline(position_input);
+            if response.changed() {
+                position_response = Some(response);
+            }
+        });
     }
     if let Some(OpenedRace {
         index,
@@ -190,9 +195,19 @@ fn edit_view(
             if let Ok(n) = position_input.parse::<usize>() {
                 if n >= 1 && n <= 12 {
                     let new_position = Position::from_index(n - 1);
-                    *position = new_position;
-                    if let OpenedIndex::Result(idx) = index {
-                        draft_mogi_result.set_position(*idx, new_position);
+                    *position = Some(new_position);
+                    match index {
+                        OpenedIndex::Result(idx) => {
+                            draft_mogi_result.set_position(*idx, new_position);
+                        }
+                        OpenedIndex::Current => {
+                            if draft_mogi_result.current_course().is_some() {
+                                println!("set current position");
+                                draft_mogi_result.set_current_position(new_position);
+                                position_input.clear();
+                                buffer.clear();
+                            }
+                        }
                     }
                 }
             }

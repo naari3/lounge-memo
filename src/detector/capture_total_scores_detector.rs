@@ -8,7 +8,7 @@ pub struct CaptureTotalScoresDetector {
 
 impl CaptureTotalScoresDetector {
     pub fn new() -> CaptureTotalScoresDetector {
-        log::debug!("CaptureTotalScoresDetector");
+        log::info!("CaptureTotalScoresDetector");
         CaptureTotalScoresDetector { delay_timer: 120 }
     }
 }
@@ -24,6 +24,7 @@ impl Detector for CaptureTotalScoresDetector {
             self.delay_timer -= 1;
             return Ok(self);
         } else {
+            log::info!("capture total scores");
             mogi_result.save_result_image(buffer, "total")?;
             return Ok(Box::new(CourseDetector::new()));
         }

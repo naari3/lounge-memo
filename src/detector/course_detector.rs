@@ -14,7 +14,7 @@ pub struct CourseDetector {
 
 impl CourseDetector {
     pub fn new() -> CourseDetector {
-        log::debug!("CourseDetector");
+        log::info!("CourseDetector");
         CourseDetector {
             on_results_vec: Vec::new(),
         }
