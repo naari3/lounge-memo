@@ -45,7 +45,15 @@ cargo run --release -- [CAPTURE DEVICE NUMBER (default 0)]
     - プラグイン形式
       - wasm？
     - 別のプログラムが食えるようなjsonを書き出す
-
+- コース編集時に略称をそのまま入れられるようになるべき
+  - 補完とかせず、略称が期待するものと一致していればEnterキーで補完できてほしい
+  - 一致しない場合は要検証
+    - 何もしない
+    - ボックスの中身を消す
+  - 略称のソースは[ここ](https://github.com/sheat-git/mk8dx.py/blob/main/mk8dx/data.py)にある
+- 即時もする
+  - OCRが不安定なので微妙かも？
+  - タグ間違いなどにどうやって対応するべきか
 
 ## test
 
