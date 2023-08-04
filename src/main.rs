@@ -1,6 +1,11 @@
+use std::sync::Arc;
+use std::sync::Mutex;
+
 use consumer::Consumer;
+use gui::App;
 use image::ImageBuffer;
 use image::Rgb;
+use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
 use tokio::task;
 
@@ -9,6 +14,7 @@ use escapi;
 mod consumer;
 mod courses;
 mod detector;
+mod gui;
 mod mogi_result;
 mod race_result;
 mod word;
@@ -86,24 +92,50 @@ async fn run_producer(tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>) -> anyhow
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     init_logger();
+    let rt = Runtime::new().expect("Unable to create Runtime");
+
+    let (from_gui_tx, from_gui_rx) = mpsc::channel(10);
+    let (to_gui_tx, to_gui_rx) = mpsc::channel(10);
 
     let (tx, rx) = mpsc::channel(10);
 
-    let producer = task::spawn(async move {
-        run_producer(tx).await.unwrap();
+    std::thread::spawn(move || {
+        rt.block_on(async {
+            let producer = task::spawn(async move {
+                run_producer(tx).await.unwrap();
+            });
+
+            let consumer = task::spawn(async {
+                let mut consumer = Consumer;
+                let mut mogi_result = mogi_result::MogiResult::new();
+                consumer
+                    .run(&mut mogi_result, rx, to_gui_tx, from_gui_rx)
+                    .await
+                    .unwrap();
+            });
+
+            producer.await.unwrap();
+            consumer.await.unwrap();
+        });
     });
 
-    let consumer = task::spawn(async {
-        let mut consumer = Consumer;
-        let mut mogi_result = mogi_result::MogiResult::new();
-        consumer.run(&mut mogi_result, rx).await.unwrap();
-    });
-
-    producer.await?;
-    consumer.await?;
+    let mut options = eframe::NativeOptions::default();
+    // options.always_on_top = true;
+    options.initial_window_size = Some(eframe::egui::Vec2::new(400.0, 600.0));
+    eframe::run_native(
+        "lounge-memo",
+        options,
+        Box::new(|ctx| {
+            Box::new(App::new(
+                ctx,
+                Arc::new(Mutex::new(from_gui_tx)),
+                Arc::new(Mutex::new(to_gui_rx)),
+            ))
+        }),
+    )
+    .unwrap();
 
     Ok(())
 }

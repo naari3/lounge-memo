@@ -208,6 +208,15 @@ pub static COURSES_SERIES_MAP_MAP: Lazy<Mutex<HashMap<Series, HashMap<String, Co
         Mutex::new(map)
     });
 
+pub static STRING_COURSE_MAP: Lazy<Mutex<HashMap<String, Course>>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    for course in COURSES.lock().unwrap().iter() {
+        let noramlized_name = course.to_string();
+        map.insert(noramlized_name, course.clone());
+    }
+    Mutex::new(map)
+});
+
 fn get_series_by_words(words: &Vec<Word>) -> Series {
     for word in words {
         let lower_text = word.text.to_lowercase();

@@ -38,6 +38,22 @@ impl MogiResult {
         self.current_course = None;
     }
 
+    pub fn iter_races(&self) -> std::slice::Iter<RaceResult> {
+        self.races.iter()
+    }
+
+    pub fn current_course(&self) -> &Option<Course> {
+        &self.current_course
+    }
+
+    pub fn set_course(&mut self, index: usize, course: Course) {
+        self.races[index].set_course(course);
+    }
+
+    pub fn set_position(&mut self, index: usize, position: Position) {
+        self.races[index].set_position(position);
+    }
+
     pub fn total_score(&self) -> u32 {
         self.races.iter().map(|r| r.to_score()).sum::<u32>()
     }

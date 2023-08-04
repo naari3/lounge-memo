@@ -2,10 +2,11 @@ use std::{fs::File, io::Write};
 
 use fps_counter::FPSCounter;
 use image::{ImageBuffer, Rgb};
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::{
     detector::{CourseDetector, Detector},
+    gui::Event,
     mogi_result::MogiResult,
 };
 
@@ -16,19 +17,20 @@ impl Consumer {
     pub async fn run(
         &mut self,
         mogi_result: &mut MogiResult,
-        mut rx: mpsc::Receiver<ImageBuffer<Rgb<u8>, Vec<u8>>>,
+        mut rx: Receiver<ImageBuffer<Rgb<u8>, Vec<u8>>>,
+        to_gui_tx: Sender<MogiResult>,
+        mut from_gui_rx: Receiver<Event>,
     ) -> anyhow::Result<()> {
         log::info!("consumer");
+        to_gui_tx.send(mogi_result.clone()).await?;
         let mut a = FPSCounter::default();
         let mut i = 0;
         let mut last_mogi_state = mogi_result.clone();
         let mut detector: Box<dyn Detector + Send + Sync> = Box::new(CourseDetector::new());
-        // let mut detector: Box<dyn Detector + Send + Sync> = Box::new(RaceFinishDetector::new());
-        // let mut detector: Box<dyn Detector + Send + Sync> = Box::new(PositionDetector::new());
         while let Some(buffer) = rx.recv().await {
-            // let mut stdout = stdout();
-            // execute!(stdout, Clear(ClearType::All), MoveTo(0, 0))?;
-
+            from_gui_rx.try_recv().ok().map(|event| match event {
+                Event::EditMogiResult(new_mogi_result) => *mogi_result = new_mogi_result,
+            });
             if i % 60 == 0 {
                 log::debug!("fps: {:?}", a.tick());
             } else {
@@ -41,6 +43,8 @@ impl Consumer {
                 let mut file = File::create("result.txt")?;
                 file.write_all(format!("{mogi_result}").as_bytes())?;
                 log::info!("updated result.txt");
+                to_gui_tx.send(mogi_result.clone()).await?;
+                log::info!("sent mogi_result to gui");
             }
             i += 1;
         }
@@ -139,6 +143,14 @@ mod test {
     async fn test() -> anyhow::Result<()> {
         let mut mogi_result = MogiResult::new();
         ffmpeg::init().unwrap();
+        let (_from_gui_tx, from_gui_rx) = tokio::sync::mpsc::channel(10);
+        let (to_gui_tx, mut to_gui_rx) = tokio::sync::mpsc::channel(10);
+
+        let _ = tokio::task::spawn(async move {
+            while let Some(event) = to_gui_rx.recv().await {
+                log::info!("event: {:?}", event);
+            }
+        });
 
         let mut consumer = Consumer;
         let (tx, rx) = tokio::sync::mpsc::channel(10);
@@ -153,7 +165,10 @@ mod test {
             }
         });
         let consumer = tokio::task::spawn(async move {
-            consumer.run(&mut mogi_result, rx).await.unwrap();
+            consumer
+                .run(&mut mogi_result, rx, to_gui_tx, from_gui_rx)
+                .await
+                .unwrap();
         });
 
         producer.await?;

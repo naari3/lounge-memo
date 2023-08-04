@@ -16,14 +16,36 @@ impl RaceResult {
     pub fn to_score(&self) -> u32 {
         self.position.to_score()
     }
+
+    pub fn course_name(&self) -> String {
+        if let Some(course) = &self.course {
+            course.to_string()
+        } else {
+            "(empty)".to_string()
+        }
+    }
+
+    pub fn course(&self) -> Option<Course> {
+        self.course.clone()
+    }
+
+    pub fn position(&self) -> Position {
+        self.position
+    }
+
+    pub fn set_course(&mut self, course: Course) {
+        self.course = Some(course);
+    }
+
+    pub fn set_position(&mut self, position: Position) {
+        self.position = position;
+    }
 }
 
 impl Display for RaceResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(course) = &self.course {
-            write!(f, "{}\t", course)?;
-        }
-        write!(f, "{}\t", self.position)?;
+        write!(f, "{}\t", self.course_name())?;
+        write!(f, "{}\t", self.position())?;
         write!(f, "{}", self.to_score())
     }
 }
