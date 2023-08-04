@@ -29,13 +29,13 @@ impl Consumer {
         let mut detector: Box<dyn Detector + Send + Sync> = Box::new(CourseDetector::new());
         while let Some(buffer) = rx.recv().await {
             if i % 60 == 0 {
-                log::debug!("fps: {:?}", a.tick());
+                log::trace!("fps: {:?}", a.tick());
             } else {
                 a.tick();
             }
             if let Ok(Event::EditMogiResult(new_mogi_result)) = from_gui_rx.try_recv() {
                 if *mogi_result.current_course() == None
-                    && *mogi_result.current_course() != *new_mogi_result.current_course()
+                    && new_mogi_result.current_course().is_some()
                 {
                     log::info!(
                         "current course has manually changed: {:?}",
