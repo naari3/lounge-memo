@@ -5,6 +5,7 @@ use eframe::{
     CreationContext, Frame,
 };
 use egui_dropdown::DropDownBox;
+use egui_extras::{Column, TableBuilder};
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::{Receiver, Sender};
 
@@ -14,7 +15,7 @@ use crate::{
     race_result::Position,
 };
 
-const PPP: f32 = 1.5;
+const PPP: f32 = 1.25;
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -103,54 +104,63 @@ fn edit_view(
     courses: &[Course],
     ui: &mut egui::Ui,
 ) {
-    ui.label("edit mode");
+    ui.strong("編集モード");
 
     let previous_buffer = opened_race
         .as_ref()
         .map(|or| or.buffer.clone())
         .unwrap_or_else(|| "".to_string());
-
     let mut position_response = None;
-    draft_mogi_result
-        .iter_races()
-        .enumerate()
-        .for_each(|(index, race)| {
-            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-                ui.label(format!("{:02}: ", index + 1));
-                if ui.button(race.course_name()).clicked() {
-                    *opened_race = Some(OpenedRace::new(
-                        OpenedIndex::Result(index),
-                        race.course(),
-                        Some(race.position()),
-                    ));
-                };
-                if ui.button(race.position().to_string()).clicked() {
-                    *opened_race = Some(OpenedRace::new(
-                        OpenedIndex::Result(index),
-                        race.course(),
-                        Some(race.position()),
-                    ));
-                };
+
+    // TODO: スクロールさせたいが、なぜかできない
+    egui::ScrollArea::horizontal()
+        .max_height(280.0)
+        .show(ui, |ui| {
+            egui::Grid::new("edit_view").show(ui, |ui| {
+                ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
+                    draft_mogi_result
+                        .iter_races()
+                        .enumerate()
+                        .for_each(|(index, race)| {
+                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                                ui.label(format!("{:02}: ", index + 1));
+                                if ui.button(race.course_name()).clicked() {
+                                    *opened_race = Some(OpenedRace::new(
+                                        OpenedIndex::Result(index),
+                                        race.course(),
+                                        Some(race.position()),
+                                    ));
+                                };
+                                if ui.button(race.position().to_string()).clicked() {
+                                    *opened_race = Some(OpenedRace::new(
+                                        OpenedIndex::Result(index),
+                                        race.course(),
+                                        Some(race.position()),
+                                    ));
+                                };
+                            });
+                            if let Some(OpenedRace {
+                                index: OpenedIndex::Result(r_index),
+                                buffer,
+                                position_input,
+                                ..
+                            }) = opened_race.as_mut()
+                            {
+                                if *r_index == index {
+                                    ui.group(|ui| {
+                                        course_dropdown(ui, courses, buffer);
+                                        let response = ui.text_edit_singleline(position_input);
+                                        if response.changed() {
+                                            position_response = Some(response);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                });
             });
-            if let Some(OpenedRace {
-                index: OpenedIndex::Result(r_index),
-                buffer,
-                position_input,
-                ..
-            }) = opened_race.as_mut()
-            {
-                if *r_index == index {
-                    ui.group(|ui| {
-                        course_dropdown(ui, courses, buffer);
-                        let response = ui.text_edit_singleline(position_input);
-                        if response.changed() {
-                            position_response = Some(response);
-                        }
-                    });
-                }
-            }
         });
-    ui.label("current course: ");
+    ui.label("現在のコース: ");
     let current_course = draft_mogi_result.current_course().clone();
     let label = current_course
         .as_ref()
@@ -159,6 +169,9 @@ fn edit_view(
         let course = current_course.map(|course| course.clone());
         opened_race.replace(OpenedRace::new(OpenedIndex::Current, course, None));
     }
+
+    let total_score = draft_mogi_result.total_score();
+    ui.label(format!("合計得点: {total_score}"));
 
     if let Some(OpenedRace {
         index: OpenedIndex::Current,
@@ -202,7 +215,7 @@ fn edit_view(
                         }
                         OpenedIndex::Current => {
                             if draft_mogi_result.current_course().is_some() {
-                                println!("set current position");
+                                log::debug!("set current position");
                                 draft_mogi_result.set_current_position(new_position);
                                 position_input.clear();
                                 buffer.clear();
@@ -213,6 +226,71 @@ fn edit_view(
             }
         }
     }
+}
+
+fn show_view(mogi_result: &MogiResult, ui: &mut egui::Ui) {
+    egui::ScrollArea::horizontal()
+        .max_height(420.0)
+        .show(ui, |ui| {
+            let table = TableBuilder::new(ui)
+                .striped(true)
+                .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                .column(Column::auto())
+                .column(Column::initial(100.0).range(40.0..=300.0))
+                .column(Column::auto())
+                .column(Column::remainder());
+            table
+                .header(18.0, |mut header| {
+                    header.col(|ui| {
+                        ui.strong("　");
+                    });
+                    header.col(|ui| {
+                        ui.strong("コース");
+                    });
+                    header.col(|ui| {
+                        ui.strong("順位");
+                    });
+                    header.col(|ui| {
+                        ui.strong("得点");
+                    });
+                })
+                .body(|mut body| {
+                    mogi_result.iter_races().enumerate().for_each(|(i, race)| {
+                        body.row(30.0, |mut row| {
+                            row.col(|ui| {
+                                ui.label(format!("{:02}", i + 1));
+                            });
+                            row.col(|ui| {
+                                ui.label(race.course_name());
+                            });
+                            row.col(|ui| {
+                                ui.label(race.position().to_string());
+                            });
+                            row.col(|ui| {
+                                ui.label(race.to_score().to_string());
+                            });
+                        });
+                    });
+                });
+        });
+
+    if ui.button("Copy").clicked() {
+        ui.output_mut(|o| {
+            mogi_result.iter_races().for_each(|race| {
+                let race_str = format!("{}\t{}\n", &race.course_name(), &race.position());
+                o.copied_text.push_str(&race_str);
+            });
+        })
+    }
+    ui.separator();
+    let current_course_name = mogi_result
+        .current_course()
+        .as_ref()
+        .map_or("(Empty)".to_string(), |course| course.to_string());
+    ui.label(format!("現在のコース: {current_course_name}",));
+
+    let total_score = mogi_result.total_score();
+    ui.label(format!("合計得点: {total_score}"));
 }
 
 impl eframe::App for App {
@@ -230,17 +308,10 @@ impl eframe::App for App {
             if let Some(draft_mogi_result) = self.draft_mogi_result.as_mut() {
                 edit_view(draft_mogi_result, &mut self.opened_race, &self.courses, ui);
             } else {
-                ui.label(self.mogi_result.to_string());
-                if ui.button("Copy").clicked() {
-                    ui.output_mut(|o| {
-                        self.mogi_result.iter_races().for_each(|race| {
-                            let race_str =
-                                format!("{}\t{}\n", &race.course_name(), &race.position());
-                            o.copied_text.push_str(&race_str);
-                        });
-                    })
-                }
+                show_view(&self.mogi_result, ui);
             }
+
+            ui.separator();
 
             if let Some(draft_mogi_result) = self.draft_mogi_result.as_mut() {
                 if ui.button("Save").clicked() {
@@ -260,6 +331,7 @@ impl eframe::App for App {
                 }
             }
         });
+
         ctx.request_repaint();
     }
 }

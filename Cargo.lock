@@ -1282,6 +1282,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui_extras"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9278f4337b526f0d57e5375e5a7340a311fa6ee8f9fcc75721ac50af13face02"
+dependencies = [
+ "egui",
+ "serde",
+]
+
+[[package]]
 name = "egui_glow"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1499,12 +1509,6 @@ dependencies = [
  "crc32fast",
  "miniz_oxide",
 ]
-
-[[package]]
-name = "flowync"
-version = "5.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22968266b0d27ce5a3cfe17c3368702169c2cebd671b737c6a85b77b4e8d2223"
 
 [[package]]
 name = "flume"
@@ -2182,10 +2186,10 @@ dependencies = [
  "criterion",
  "eframe",
  "egui-dropdown",
+ "egui_extras",
  "escapi",
  "fern",
  "ffmpeg-next",
- "flowync",
  "fps_counter",
  "image",
  "log",

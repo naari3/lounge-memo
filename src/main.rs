@@ -126,7 +126,7 @@ fn main() -> anyhow::Result<()> {
 
     let mut options = eframe::NativeOptions::default();
     // options.always_on_top = true;
-    options.initial_window_size = Some(eframe::egui::Vec2::new(400.0, 600.0));
+    options.initial_window_size = Some(eframe::egui::Vec2::new(400.0, 720.0));
     eframe::run_native(
         "lounge-memo",
         options,
