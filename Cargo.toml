@@ -32,9 +32,12 @@ log = "0.4.19"
 eframe = "0.22.0"
 flowync = { version = "5.1.0", features = ["compact"] }
 egui-dropdown = "0.3.0"
+opencv = { version = "0.84.4", features = ["clang-runtime"] }
+clap = { version = "4.0", features = ["derive"] }
 
 [dev-dependencies]
 ffmpeg-next = { version = "6.0.0" }
+criterion = { version = "0.5", features = ["html_reports"] }
 
 [dependencies.nokhwa]
 git = "https://github.com/l1npengtul/nokhwa.git"
@@ -52,4 +55,10 @@ features = [
     "Foundation_Collections",
     "Media_Ocr",
     "Win32_System_WinRT",
+    "Win32_Media_DirectShow",
+    "Win32_System_Com",
+    "Win32_Foundation",
+    "Win32_System_Ole",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com_StructuredStorage",
 ]

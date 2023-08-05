@@ -1,7 +1,7 @@
 use crate::courses::get_course_by_words_with_nearest;
 use crate::detector::RaceFinishDetector;
-use crate::HEIGHT;
-use crate::{courses::get_course_by_words, mogi_result::MogiResult, word::Word, WIDTH};
+use crate::size::{HEIGHT, WIDTH};
+use crate::{courses::get_course_by_words, mogi_result::MogiResult, word::Word};
 use async_trait::async_trait;
 use image::Rgb;
 use image::{ImageBuffer, Luma};

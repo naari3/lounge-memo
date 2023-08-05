@@ -2,9 +2,9 @@ use async_trait::async_trait;
 
 use super::Detector;
 use crate::detector::{CaptureTotalScoresDetector, CourseDetector};
+use crate::mogi_result::MogiResult;
 use crate::race_result::Position;
-use crate::HEIGHT;
-use crate::{mogi_result::MogiResult, WIDTH};
+use crate::size::{HEIGHT, WIDTH};
 use image::Rgb;
 use image::{ImageBuffer, Pixel};
 

@@ -1,28 +1,48 @@
+use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use clap::Parser;
 use consumer::Consumer;
 use gui::App;
 use image::ImageBuffer;
 use image::Rgb;
+use log::LevelFilter;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
 use tokio::task;
 
-use escapi;
+use crate::capture::loop_capture_with_escapi;
+use crate::capture::loop_capture_with_opencv;
 
+mod capture;
 mod consumer;
 mod courses;
 mod detector;
 mod gui;
 mod mogi_result;
 mod race_result;
+mod size;
 mod word;
 
-pub const WIDTH: usize = 1280;
-pub const HEIGHT: usize = 720;
+#[derive(Debug, Parser, Clone)]
+#[clap(name = "lounge-memo")]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Set a index of camera device
+    #[arg(short, long, default_value = "0")]
+    index: usize,
+    /// Use DirectShow instead of MSMF, default is MSMF.
+    /// This is useful when the default does not work well.
+    #[arg(short, long, default_value = "false")]
+    directshow: bool,
+    /// Set a log level
+    #[arg(long, default_value = "INFO")]
+    log_level: String,
+}
 
-fn init_logger() {
+fn init_logger(log_level: &str) {
+    let log_level = LevelFilter::from_str(log_level).unwrap_or(LevelFilter::Info);
     let base_config = fern::Dispatch::new();
     let file_config = fern::Dispatch::new()
         .format(|out, message, record| {
@@ -50,7 +70,7 @@ fn init_logger() {
         })
         // .level(log::LevelFilter::Trace)
         .level(log::LevelFilter::Warn)
-        .level_for("lounge_memo", log::LevelFilter::Info)
+        .level_for("lounge_memo", log_level)
         .chain(std::io::stdout());
     base_config
         .chain(file_config)
@@ -59,41 +79,24 @@ fn init_logger() {
         .unwrap();
 }
 
-async fn run_producer(tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>) -> anyhow::Result<()> {
-    // 引数から数字を取得する なければ0
-    let camera_index = std::env::args()
-        .nth(1)
-        .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(0);
+async fn run_producer(
+    args: &Args,
+    tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>,
+) -> anyhow::Result<()> {
+    let camera_index = args.index;
     log::info!("producer");
-    let camera = escapi::init(camera_index, WIDTH as _, HEIGHT as _, 30).unwrap();
-    let (width, height) = (camera.capture_width(), camera.capture_height());
-    log::info!("camera: {} {}x{}", camera.name(), width, height);
-
-    loop {
-        let pixels = camera.capture().expect("capture failed");
-
-        let mut buffer = vec![0; width as usize * height as usize * 3];
-        for i in 0..pixels.len() / 4 {
-            buffer[i * 3] = pixels[i * 4 + 2];
-            buffer[i * 3 + 1] = pixels[i * 4 + 1];
-            buffer[i * 3 + 2] = pixels[i * 4];
-        }
-
-        let img = ImageBuffer::from_raw(width as _, height as _, buffer).unwrap();
-        match tx.send(img).await {
-            Ok(_) => {}
-            Err(e) => {
-                log::error!("error: {}", e);
-                break;
-            }
-        }
+    if args.directshow {
+        loop_capture_with_opencv(camera_index, tx).await?;
+    } else {
+        loop_capture_with_escapi(camera_index, tx).await?;
     }
     Ok(())
 }
 
 fn main() -> anyhow::Result<()> {
-    init_logger();
+    let args = Args::parse();
+
+    init_logger(&args.log_level);
     let rt = Runtime::new().expect("Unable to create Runtime");
 
     let (from_gui_tx, from_gui_rx) = mpsc::channel(10);
@@ -104,7 +107,7 @@ fn main() -> anyhow::Result<()> {
     std::thread::spawn(move || {
         rt.block_on(async {
             let producer = task::spawn(async move {
-                run_producer(tx).await.unwrap();
+                run_producer(&args, tx).await.unwrap();
             });
 
             let consumer = task::spawn(async {

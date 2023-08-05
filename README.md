@@ -2,6 +2,19 @@
 
 キャプチャーボードから取得できる画像から、どのコースを走り、何位だったのか？を自動でメモするためのツール
 
+## Run
+
+```cmd
+Usage: lounge-memo.exe [OPTIONS]
+
+Options:
+  -i, --index <INDEX>          Set a index of camera device [default: 0]
+  -d, --directshow             Use DirectShow instead of MSMF, default is MSMF. This is useful when the default does not work well
+      --log-level <LOG_LEVEL>  Set a log level [default: INFO]
+  -h, --help                   Print help
+  -V, --version                Print version
+```
+
 ## Features
 
 - レース結果を `results.txt` に出力
@@ -16,12 +29,6 @@
 
 - Windows
   - tested on Windows 11
-
-## Run
-
-```cmd
-cargo run --release -- [CAPTURE DEVICE NUMBER (default 0)]
-```
 
 ## TODO
 
@@ -55,7 +62,15 @@ cargo run --release -- [CAPTURE DEVICE NUMBER (default 0)]
   - OCRが不安定なので微妙かも？
   - タグ間違いなどにどうやって対応するべきか
 
-## test
+## For build information
+
+### Environment
+
+- OpenCV installed
+  - `vcpkg install opencv4:x64-windows-static-md`
+- llvm installed
+
+### test
 
 ```
 vcpkg install ffmpeg:x64-windows
