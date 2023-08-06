@@ -24,6 +24,8 @@ impl Detector for CaptureTotalScoresDetector {
         buffer: &image::ImageBuffer<image::Rgb<u8>, std::vec::Vec<u8>>,
         mogi_result: &mut crate::mogi_result::MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
+        // TODO: または、現在のfpsからなんとなく4秒を算出してもいいかも
+        // 現状のままだと多分実行が早すぎてテストが動かない(Instantを使っているため)
         if self.position_checked_at.elapsed().as_secs_f64() < 4.0 {
             return Ok(self);
         }
