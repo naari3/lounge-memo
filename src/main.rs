@@ -2,6 +2,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use capture::get_directshow_device_name_map;
+use capture::get_msmf_device_name_map;
 use clap::Parser;
 use consumer::Consumer;
 use gui::App;
@@ -39,6 +41,10 @@ struct Args {
     /// Set a log level
     #[arg(long, default_value = "INFO")]
     log_level: String,
+    /// Show a list of camera devices. This is useful when you want to know the index of the camera device.
+    /// This is affected by the --directshow option, so if you want to use DirectShow, please specify it.
+    #[arg(long)]
+    list_device_name: bool,
 }
 
 fn init_logger(log_level: &str) {
@@ -97,6 +103,25 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     init_logger(&args.log_level);
+
+    if args.list_device_name {
+        let (kind, device_name_map) = if args.directshow {
+            ("DirectShow", get_directshow_device_name_map()?)
+        } else {
+            ("MSMF", get_msmf_device_name_map()?)
+        };
+        println!("{} device list:", kind);
+        println!("(index: device name)");
+        println!("---------------------");
+        // keyでソートする
+        let mut device_name_map: Vec<(usize, String)> = device_name_map.into_iter().collect();
+        device_name_map.sort_by(|a, b| a.0.cmp(&b.0));
+        for (i, name) in device_name_map {
+            println!("{}: {}", i, name);
+        }
+        return Ok(());
+    }
+
     let rt = Runtime::new().expect("Unable to create Runtime");
 
     let (from_gui_tx, from_gui_rx) = mpsc::channel(10);

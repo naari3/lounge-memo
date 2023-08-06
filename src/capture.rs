@@ -1,3 +1,4 @@
+use eframe::epaint::ahash::HashMap;
 use escapi::Device;
 use image::{ImageBuffer, Rgb};
 use opencv::prelude::Mat;
@@ -167,4 +168,26 @@ fn get_friendly_names() -> anyhow::Result<Vec<String>> {
     }
 
     Ok(friendly_names)
+}
+
+pub fn get_msmf_device_name_map() -> anyhow::Result<HashMap<usize, String>> {
+    let device_num = escapi::num_devices();
+    let device_map = (0..device_num)
+        .filter_map(|i| {
+            escapi::init(i, WIDTH as _, HEIGHT as _, 30)
+                .ok()
+                .map(|r| (i, r.name()))
+        })
+        .collect::<HashMap<usize, String>>();
+
+    Ok(device_map)
+}
+
+pub fn get_directshow_device_name_map() -> anyhow::Result<HashMap<usize, String>> {
+    let mut friendly_names = get_friendly_names()?;
+    let device_map = (0..friendly_names.len())
+        .map(|i| (i, friendly_names.remove(0)))
+        .collect::<HashMap<usize, String>>();
+
+    Ok(device_map)
 }

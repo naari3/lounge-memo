@@ -11,6 +11,7 @@ Options:
   -i, --index <INDEX>          Set a index of camera device [default: 0]
   -d, --directshow             Use DirectShow instead of MSMF, default is MSMF. This is useful when the default does not work well
       --log-level <LOG_LEVEL>  Set a log level [default: INFO]
+      --list-device-name       Show a list of camera devices. This is useful when you want to know the index of the camera device. This is affected by the --directshow option, so if you want to use DirectShow, please specify it
   -h, --help                   Print help
   -V, --version                Print version
 ```
