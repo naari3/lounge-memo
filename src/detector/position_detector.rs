@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use async_trait::async_trait;
 
 use super::Detector;
@@ -10,6 +12,7 @@ use image::{ImageBuffer, Pixel};
 
 pub struct PositionDetector {
     positions_vec: Vec<Position>,
+    last_check: Option<Instant>,
 }
 
 const LINE_HEIGHT: f64 = (78.0 / 1080.0) * HEIGHT as f64;
@@ -22,6 +25,7 @@ impl PositionDetector {
         log::info!("PositionDetector");
         PositionDetector {
             positions_vec: Vec::new(),
+            last_check: None,
         }
     }
 }
@@ -64,6 +68,10 @@ impl Detector for PositionDetector {
         if let Some(yellow_line_index) = yellow_line_index {
             let position = Position::from_index(yellow_line_index);
             mogi_result.set_current_position(position);
+            if self.positions_vec.len() == 0 {
+                // 初回チェック
+                self.last_check = Some(Instant::now());
+            }
             self.positions_vec.push(position);
             // すべて同じPositionだったら
             if self.positions_vec.len() >= 4
@@ -75,7 +83,9 @@ impl Detector for PositionDetector {
                 log::info!("position: {position}");
                 log::info!("capture race results");
                 mogi_result.save_result_image(buffer, "race")?;
-                return Ok(Box::new(CaptureTotalScoresDetector::new()));
+                return Ok(Box::new(CaptureTotalScoresDetector::new(
+                    self.last_check.unwrap(),
+                )));
             }
             // ひとつでも違うPositionがあったら
             if self
@@ -83,6 +93,7 @@ impl Detector for PositionDetector {
                 .iter()
                 .any(|p| *p != self.positions_vec[0])
             {
+                self.last_check = Some(Instant::now());
                 self.positions_vec.clear();
             }
         }

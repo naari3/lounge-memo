@@ -1,15 +1,19 @@
+use std::time::Instant;
+
 use async_trait::async_trait;
 
 use super::{CourseDetector, Detector};
 
 pub struct CaptureTotalScoresDetector {
-    delay_timer: usize,
+    position_checked_at: Instant,
 }
 
 impl CaptureTotalScoresDetector {
-    pub fn new() -> CaptureTotalScoresDetector {
+    pub fn new(position_checked_at: Instant) -> CaptureTotalScoresDetector {
         log::info!("CaptureTotalScoresDetector");
-        CaptureTotalScoresDetector { delay_timer: 120 }
+        CaptureTotalScoresDetector {
+            position_checked_at,
+        }
     }
 }
 
@@ -20,13 +24,12 @@ impl Detector for CaptureTotalScoresDetector {
         buffer: &image::ImageBuffer<image::Rgb<u8>, std::vec::Vec<u8>>,
         mogi_result: &mut crate::mogi_result::MogiResult,
     ) -> anyhow::Result<Box<dyn Detector + Send + Sync>> {
-        if self.delay_timer > 0 {
-            self.delay_timer -= 1;
+        if self.position_checked_at.elapsed().as_secs_f64() < 4.0 {
             return Ok(self);
-        } else {
-            log::info!("capture total scores");
-            mogi_result.save_result_image(buffer, "total")?;
-            return Ok(Box::new(CourseDetector::new()));
         }
+
+        log::info!("capture total scores");
+        mogi_result.save_result_image(buffer, "total")?;
+        return Ok(Box::new(CourseDetector::new()));
     }
 }
