@@ -7,6 +7,7 @@ use strsim::levenshtein;
 
 use crate::word::{normalize_japanese_characters, Word};
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Series {
     SFC,
@@ -248,11 +249,11 @@ fn get_series_by_words(words: &Vec<Word>) -> Series {
             return Series::Tour;
         }
     }
-    return Series::New;
+    Series::New
 }
 
 pub fn get_course_by_words(words: &Vec<Word>) -> Option<Course> {
-    let series = get_series_by_words(&words);
+    let series = get_series_by_words(words);
 
     let binding = COURSES_SERIES_MAP_MAP.lock().unwrap();
     let course_map = binding.get(&series).unwrap();
@@ -264,14 +265,14 @@ pub fn get_course_by_words(words: &Vec<Word>) -> Option<Course> {
             return Some(course.clone());
         }
     }
-    return None;
+    None
 }
 
 pub fn get_course_by_words_with_nearest(words: &Vec<Word>, threshold: usize) -> Option<Course> {
-    if words.len() == 0 {
+    if words.is_empty() {
         return None;
     }
-    let series = get_series_by_words(&words);
+    let series = get_series_by_words(words);
 
     let longest_word = words
         .iter()

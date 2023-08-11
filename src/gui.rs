@@ -170,8 +170,8 @@ impl App {
                 capture_with_opencv(&mut device).ok()
             } else {
                 let device = open_msmf_device(&device_name).unwrap();
-                let mut device = device.lock().unwrap();
-                capture_with_escapi(&mut device).ok()
+                let device = device.lock().unwrap();
+                capture_with_escapi(&device).ok()
             };
 
             if let Some(img) = img {
@@ -271,8 +271,7 @@ fn edit_view(
         .as_ref()
         .map_or("(Empty)".to_string(), |course| course.to_string());
     if ui.button(label).clicked() {
-        let course = current_course.map(|course| course.clone());
-        opened_race.replace(OpenedRace::new(OpenedIndex::Current, course, None));
+        opened_race.replace(OpenedRace::new(OpenedIndex::Current, current_course, None));
     }
 
     let total_score = draft_mogi_result.total_score();
@@ -311,7 +310,7 @@ fn edit_view(
         }
         if position_response.is_some() {
             if let Ok(n) = position_input.parse::<usize>() {
-                if n >= 1 && n <= 12 {
+                if (1..=12).contains(&n) {
                     let new_position = Position::from_index(n - 1);
                     *position = Some(new_position);
                     match index {
@@ -493,7 +492,7 @@ impl eframe::App for App {
             });
 
             if self.on_settings {
-                settings_view(self, ui, &frame);
+                settings_view(self, ui, frame);
                 return;
             }
 
@@ -517,10 +516,8 @@ impl eframe::App for App {
                     self.draft_mogi_result = None;
                     self.opened_race = None;
                 }
-            } else {
-                if ui.button("Edit").clicked() {
-                    self.draft_mogi_result = Some(self.mogi_result.clone());
-                }
+            } else if ui.button("Edit").clicked() {
+                self.draft_mogi_result = Some(self.mogi_result.clone());
             }
         });
 

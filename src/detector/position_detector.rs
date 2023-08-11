@@ -50,7 +50,7 @@ impl Detector for PositionDetector {
                 let mut pixels = Vec::new();
                 log::trace!("index: {}", index);
                 for y in (y_offset as u32)..(y_offset as u32) + 5 {
-                    let pixel = buffer.get_pixel(x as u32, y as u32).clone();
+                    let pixel = *buffer.get_pixel(x as u32, y);
                     log::trace!("x: {x}, y: {y}, color: {:?}", pixel.channels());
                     pixels.push(pixel);
                 }
@@ -68,7 +68,7 @@ impl Detector for PositionDetector {
         if let Some(yellow_line_index) = yellow_line_index {
             let position = Position::from_index(yellow_line_index);
             mogi_result.set_current_position(position);
-            if self.positions_vec.len() == 0 {
+            if self.positions_vec.is_empty() {
                 // 初回チェック
                 self.last_check = Some(Instant::now());
             }
@@ -103,7 +103,7 @@ impl Detector for PositionDetector {
 }
 
 fn is_yellow_zone(pixels: &[Rgb<u8>]) -> bool {
-    pixels.iter().all(|p| is_yellow(p))
+    pixels.iter().all(is_yellow)
 }
 
 fn is_yellow(pixel: &Rgb<u8>) -> bool {

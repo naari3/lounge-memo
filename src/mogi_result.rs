@@ -63,14 +63,14 @@ impl MogiResult {
     pub fn save_result_image(&self, buffer: &image::RgbImage, prefix: &str) -> anyhow::Result<()> {
         let path = format!(
             "results/{}/{}_{:02}.png",
-            self.created_at.format("%Y%m%d-%H%M%S").to_string(),
+            self.created_at.format("%Y%m%d-%H%M%S"),
             prefix,
             self.races.len(),
         );
         // ディレクトリがなければ作る
         std::fs::create_dir_all(format!(
             "results/{}",
-            self.created_at.format("%Y%m%d-%H%M%S").to_string()
+            self.created_at.format("%Y%m%d-%H%M%S")
         ))?;
         buffer.save(path)?;
         Ok(())

@@ -34,7 +34,7 @@ pub trait Detector {
         let normalized_words = words
             .into_iter()
             .filter(|w| w.text.len() >= 2)
-            .map(|w| normalize_japanese_characters(w.text.replace(" ", "")))
+            .map(|w| normalize_japanese_characters(w.text.replace(' ', "")))
             .collect::<Vec<String>>();
 
         let mut error_count = 0;

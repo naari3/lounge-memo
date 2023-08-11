@@ -39,7 +39,7 @@ impl Consumer {
                 a.tick();
             }
             if let Ok(Event::EditMogiResult(new_mogi_result)) = from_gui_rx.try_recv() {
-                if *mogi_result.current_course() == None
+                if mogi_result.current_course().is_none()
                     && new_mogi_result.current_course().is_some()
                 {
                     log::info!(
@@ -165,7 +165,8 @@ mod test {
             while let Some(event) = to_gui_rx.recv().await {
                 log::info!("event: {:?}", event);
             }
-        });
+        })
+        .await;
 
         let mut consumer = Consumer;
         let (tx, rx) = tokio::sync::mpsc::channel(10);

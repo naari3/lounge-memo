@@ -6,6 +6,7 @@ use std::{
 use async_trait::async_trait;
 use escapi::Device;
 use image::RgbImage;
+use once_cell::sync::Lazy;
 use tokio::sync::mpsc::Sender;
 
 use crate::{
@@ -15,11 +16,12 @@ use crate::{
 
 use super::Capture;
 
-static DEVICE_CACHE: once_cell::sync::Lazy<Arc<Mutex<HashMap<String, Arc<Mutex<Device>>>>>> =
-    once_cell::sync::Lazy::new(|| {
-        let map = HashMap::new();
-        Arc::new(Mutex::new(map))
-    });
+type DeviceCache = HashMap<String, Arc<Mutex<Device>>>;
+
+static DEVICE_CACHE: Lazy<Arc<Mutex<DeviceCache>>> = Lazy::new(|| {
+    let map = HashMap::new();
+    Arc::new(Mutex::new(map))
+});
 
 pub fn open_msmf_device(device_name: &str) -> anyhow::Result<Arc<Mutex<Device>>> {
     if let Some(device) = DEVICE_CACHE.lock().unwrap().get(device_name) {
@@ -29,7 +31,7 @@ pub fn open_msmf_device(device_name: &str) -> anyhow::Result<Arc<Mutex<Device>>>
     let device_name_map = get_msmf_device_name_map()?;
     let device_index = device_name_map
         .into_iter()
-        .find(|(_, v)| v == &device_name)
+        .find(|(_, v)| v == device_name)
         .map(|(k, _)| k)
         .ok_or(anyhow::anyhow!("device_name not found"))?;
     let device = escapi::init(device_index, WIDTH as _, HEIGHT as _, 30)?;
@@ -61,7 +63,7 @@ impl Capture for MSMFCapture {
     }
 
     async fn capture(&mut self, tx: &Sender<RgbImage>) -> anyhow::Result<()> {
-        let img = capture_with_escapi(&mut self.device.lock().unwrap())?;
+        let img = capture_with_escapi(&self.device.lock().unwrap())?;
         tx.send(img).await?;
         self.last = std::time::Instant::now();
         Ok(())

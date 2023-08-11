@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use image::RgbImage;
+use once_cell::sync::Lazy;
 use opencv::prelude::VideoCaptureTraitConst;
 use opencv::videoio::{self, VideoCaptureTrait, CAP_PROP_FRAME_HEIGHT, CAP_PROP_FRAME_WIDTH};
 use tokio::sync::mpsc::Sender;
@@ -15,9 +16,9 @@ use crate::{
 
 use super::Capture;
 
-static DEVICE_CACHE: once_cell::sync::Lazy<
-    Arc<Mutex<HashMap<String, Arc<Mutex<videoio::VideoCapture>>>>>,
-> = once_cell::sync::Lazy::new(|| {
+type DeviceCache = HashMap<String, Arc<Mutex<videoio::VideoCapture>>>;
+
+static DEVICE_CACHE: Lazy<Arc<Mutex<DeviceCache>>> = Lazy::new(|| {
     let map = HashMap::new();
     Arc::new(Mutex::new(map))
 });
@@ -32,7 +33,7 @@ pub fn open_directshow_device(
     let device_name_map = get_directshow_device_name_map()?;
     let device_index = device_name_map
         .into_iter()
-        .find(|(_, v)| v == &device_name)
+        .find(|(_, v)| v == device_name)
         .map(|(k, _)| k)
         .ok_or(anyhow::anyhow!("device_name not found"))?;
     let mut device = videoio::VideoCapture::new(device_index as _, videoio::CAP_DSHOW)?;

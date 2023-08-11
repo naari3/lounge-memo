@@ -67,7 +67,7 @@ impl Detector for CourseDetector {
                 return Ok(self);
             }
         };
-        if words.len() > 0 {
+        if !words.is_empty() {
             log::trace!("words: {:?}", &words);
         }
         let for_course_texts = words
@@ -75,7 +75,7 @@ impl Detector for CourseDetector {
             .filter(filter_for_course_texts)
             .collect::<Vec<Word>>();
 
-        if for_course_texts.len() > 0 {
+        if !for_course_texts.is_empty() {
             log::trace!("for_course_texts: {:?}", &for_course_texts);
         }
 
@@ -112,13 +112,12 @@ fn filter_for_course_texts(word: &Word) -> bool {
     let lower_text = word.text.to_lowercase();
 
     // SFC, GBA, n64, GC, DS, Wii, 3DS が入っていたら通す
-    let is_series_text = lower_text.contains("sfc")
+    lower_text.contains("sfc")
         || lower_text.contains("gba")
         || lower_text.contains("n64")
         || lower_text.contains("gc")
         || lower_text.contains("ds")
         || lower_text.contains("wii")
         || lower_text.contains("3ds")
-        || lower_text.contains("tour");
-    return is_series_text;
+        || lower_text.contains("tour")
 }

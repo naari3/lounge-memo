@@ -12,15 +12,42 @@ use super::Detector;
 
 // based 1280 x 720
 const FLAG_CHECK_PATTERN: [(u32, u32); 9] = [
-    ((174 / 1280 * WIDTH) as _, (659 / 1280 * WIDTH) as _),
-    ((183 / 1280 * WIDTH) as _, (659 / 1280 * WIDTH) as _),
-    ((192 / 1280 * WIDTH) as _, (659 / 1280 * WIDTH) as _),
-    ((174 / 1280 * WIDTH) as _, (667 / 1280 * WIDTH) as _),
-    ((180 / 1280 * WIDTH) as _, (667 / 1280 * WIDTH) as _),
-    ((189 / 1280 * WIDTH) as _, (667 / 1280 * WIDTH) as _),
-    ((173 / 1280 * WIDTH) as _, (675 / 1280 * WIDTH) as _),
-    ((182 / 1280 * WIDTH) as _, (675 / 1280 * WIDTH) as _),
-    ((191 / 1280 * WIDTH) as _, (675 / 1280 * WIDTH) as _),
+    (
+        (174.0 / 1280.0 * WIDTH as f32) as _,
+        (659.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (183.0 / 1280.0 * WIDTH as f32) as _,
+        (659.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (192.0 / 1280.0 * WIDTH as f32) as _,
+        (659.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (174.0 / 1280.0 * WIDTH as f32) as _,
+        (667.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (180.0 / 1280.0 * WIDTH as f32) as _,
+        (667.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (189.0 / 1280.0 * WIDTH as f32) as _,
+        (667.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (173.0 / 1280.0 * WIDTH as f32) as _,
+        (675.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (182.0 / 1280.0 * WIDTH as f32) as _,
+        (675.0 / 1280.0 * WIDTH as f32) as _,
+    ),
+    (
+        (191.0 / 1280.0 * WIDTH as f32) as _,
+        (675.0 / 1280.0 * WIDTH as f32) as _,
+    ),
 ];
 
 pub struct RaceFinishDetector {
@@ -67,28 +94,26 @@ impl RaceFinishDetector {
         );
         let results = self.results_matcher.wait_for_result();
         let location_offset_x_min: u32 = match self.race_kind {
-            RaceKind::Internet => 555 as u32,
-            RaceKind::Local => 595 as u32,
+            RaceKind::Internet => 555_u32,
+            RaceKind::Local => 595_u32,
         };
         // let location_offset_x_max = 605;
         let location_offset_x_max = match self.race_kind {
-            RaceKind::Internet => 568 as u32,
-            RaceKind::Local => 605 as u32,
+            RaceKind::Internet => 568_u32,
+            RaceKind::Local => 605_u32,
         };
         if let Some(results) = results {
             let extremes = find_extremes(&results);
             log::trace!("results: {:?}", extremes.max_value_location);
             if extremes.max_value_location.0 >= location_offset_x_min
                 && extremes.max_value_location.0 <= location_offset_x_max
+                && extremes.max_value_location.1 >= 42_u32
+                && extremes.max_value_location.1 <= 57_u32
             {
-                if extremes.max_value_location.1 >= 42 as u32
-                    && extremes.max_value_location.1 <= 57 as u32
-                {
-                    self.on_results_vec.push(true);
-                    if self.on_results_vec.len() > 4 {
-                        self.on_results_vec.remove(0);
-                        return;
-                    }
+                self.on_results_vec.push(true);
+                if self.on_results_vec.len() > 4 {
+                    self.on_results_vec.remove(0);
+                    return;
                 }
             }
         }
@@ -126,11 +151,9 @@ impl Detector for RaceFinishDetector {
                     log::trace!("flag is on view");
                     return Ok(self);
                 }
-            } else {
-                if r > 0xD0 && g > 0xD0 && b > 0xD0 {
-                    log::trace!("flag is on view");
-                    return Ok(self);
-                }
+            } else if r > 0xD0 && g > 0xD0 && b > 0xD0 {
+                log::trace!("flag is on view");
+                return Ok(self);
             }
         }
 
