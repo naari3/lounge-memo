@@ -1,12 +1,13 @@
 use std::{collections::HashMap, fmt::Display};
 
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use strsim::levenshtein;
 
 use crate::word::{normalize_japanese_characters, Word};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Series {
     SFC,
     GBA,
@@ -35,7 +36,7 @@ impl Display for Series {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Course {
     name: String,
     series: Series,

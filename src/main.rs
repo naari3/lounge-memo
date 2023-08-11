@@ -1,69 +1,35 @@
+use std::fs::read_to_string;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use capture::get_directshow_device_name_map;
-use capture::get_msmf_device_name_map;
-use clap::Parser;
 use consumer::Consumer;
 use gui::App;
-use image::ImageBuffer;
-use image::Rgb;
 use log::LevelFilter;
+use mogi_result::MogiResult;
+use settings::Settings;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
 use tokio::task;
 
-use crate::capture::loop_capture_with_escapi;
-use crate::capture::loop_capture_with_opencv;
+use crate::producer::Producer;
 
 mod capture;
+mod capture_raw;
 mod consumer;
 mod courses;
 mod detector;
 mod gui;
 mod mogi_result;
+mod producer;
 mod race_result;
+mod settings;
 mod size;
 mod word;
 
-#[derive(Debug, Parser, Clone)]
-#[clap(name = "lounge-memo")]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// Set a index of camera device
-    #[arg(short, long, default_value = "0")]
-    index: usize,
-    /// Use DirectShow instead of MSMF, default is MSMF.
-    /// This is useful when the default does not work well.
-    #[arg(short, long, default_value = "false")]
-    directshow: bool,
-    /// Set a log level
-    #[arg(long, default_value = "INFO")]
-    log_level: String,
-    /// Show a list of camera devices. This is useful when you want to know the index of the camera device.
-    /// This is affected by the --directshow option, so if you want to use DirectShow, please specify it.
-    #[arg(long)]
-    list_device_name: bool,
-}
-
-fn init_logger(log_level: &str) {
+fn init_logger(log_level: &str, write_log_to_file: bool) {
     let log_level = LevelFilter::from_str(log_level).unwrap_or(LevelFilter::Info);
-    let base_config = fern::Dispatch::new();
-    let file_config = fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "{}[{}][{}] {}",
-                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
-                record.target(),
-                record.level(),
-                message
-            ))
-        })
-        // .level(log::LevelFilter::Trace)
-        .level(log::LevelFilter::Warn)
-        .level_for("lounge_memo", log::LevelFilter::Trace)
-        .chain(fern::log_file("output.log").unwrap());
+    let mut base_config = fern::Dispatch::new();
     let stdout_config = fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
@@ -78,51 +44,48 @@ fn init_logger(log_level: &str) {
         .level(log::LevelFilter::Warn)
         .level_for("lounge_memo", log_level)
         .chain(std::io::stdout());
-    base_config
-        .chain(file_config)
-        .chain(stdout_config)
-        .apply()
-        .unwrap();
+    base_config = base_config.chain(stdout_config);
+
+    if write_log_to_file {
+        let file_config = fern::Dispatch::new()
+            .format(|out, message, record| {
+                out.finish(format_args!(
+                    "{}[{}][{}] {}",
+                    chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                    record.target(),
+                    record.level(),
+                    message
+                ))
+            })
+            // .level(log::LevelFilter::Trace)
+            .level(log::LevelFilter::Warn)
+            .level_for("lounge_memo", log::LevelFilter::Trace)
+            .chain(fern::log_file("output.log").unwrap());
+
+        base_config = base_config.chain(file_config);
+    }
+
+    base_config.apply().unwrap();
 }
 
-async fn run_producer(
-    args: &Args,
-    tx: mpsc::Sender<ImageBuffer<Rgb<u8>, Vec<u8>>>,
-) -> anyhow::Result<()> {
-    let camera_index = args.index;
-    log::info!("producer");
-    if args.directshow {
-        loop_capture_with_opencv(camera_index, tx).await?;
-    } else {
-        loop_capture_with_escapi(camera_index, tx).await?;
-    }
-    Ok(())
-}
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let settings: Settings = match read_to_string("settings.toml") {
+        Ok(s) => toml::from_str(&s).unwrap(),
+        Err(_) => Settings::new("OBS-Camera".to_string(), true, "INFO".to_string(), false),
+    };
+    init_logger(settings.log_level(), settings.write_log_to_file());
 
-fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
-
-    init_logger(&args.log_level);
-
-    if args.list_device_name {
-        let (kind, device_name_map) = if args.directshow {
-            ("DirectShow", get_directshow_device_name_map()?)
-        } else {
-            ("MSMF", get_msmf_device_name_map()?)
-        };
-        println!("{} device list:", kind);
-        println!("(index: device name)");
-        println!("---------------------");
-        // keyでソートする
-        let mut device_name_map: Vec<(usize, String)> = device_name_map.into_iter().collect();
-        device_name_map.sort_by(|a, b| a.0.cmp(&b.0));
-        for (i, name) in device_name_map {
-            println!("{}: {}", i, name);
-        }
-        return Ok(());
-    }
+    let mut result: MogiResult = match read_to_string("result.json") {
+        Ok(s) => serde_json::from_str(&s).unwrap(),
+        Err(_) => MogiResult::new(),
+    };
 
     let rt = Runtime::new().expect("Unable to create Runtime");
+
+    let (settings_tx, settings_rx) = mpsc::channel(10);
+
+    settings_tx.send(settings.clone()).await.unwrap();
 
     let (from_gui_tx, from_gui_rx) = mpsc::channel(10);
     let (to_gui_tx, to_gui_rx) = mpsc::channel(10);
@@ -132,20 +95,40 @@ fn main() -> anyhow::Result<()> {
     std::thread::spawn(move || {
         rt.block_on(async {
             let producer = task::spawn(async move {
-                run_producer(&args, tx).await.unwrap();
+                let mut producer = Producer;
+                producer.run(tx, settings_rx).await.unwrap();
             });
 
-            let consumer = task::spawn(async {
+            let consumer = task::spawn(async move {
                 let mut consumer = Consumer;
-                let mut mogi_result = mogi_result::MogiResult::new();
                 consumer
-                    .run(&mut mogi_result, rx, to_gui_tx, from_gui_rx)
+                    .run(&mut result, rx, to_gui_tx, from_gui_rx)
                     .await
                     .unwrap();
             });
 
-            producer.await.unwrap();
-            consumer.await.unwrap();
+            match producer.await {
+                Ok(_) => {
+                    log::info!("producer finished");
+                    consumer.abort();
+                }
+                Err(err) => {
+                    log::error!("producer error: {}", err);
+                    consumer.abort();
+                }
+            };
+            match consumer.await {
+                Ok(_) => {
+                    log::info!("consumer finished");
+                }
+                Err(err) => {
+                    log::error!("consumer error: {}", err);
+                }
+            }
+
+            log::info!("finish");
+            // exit process
+            std::process::exit(0);
         });
     });
 
@@ -160,6 +143,8 @@ fn main() -> anyhow::Result<()> {
                 ctx,
                 Arc::new(Mutex::new(from_gui_tx)),
                 Arc::new(Mutex::new(to_gui_rx)),
+                Arc::new(Mutex::new(settings_tx)),
+                settings,
             ))
         }),
     )

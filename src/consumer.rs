@@ -26,9 +26,14 @@ impl Consumer {
         let mut a = FPSCounter::default();
         let mut i = 0;
         let mut last_mogi_state = mogi_result.clone();
-        let mut detector: Box<dyn Detector + Send + Sync> = Box::new(CourseDetector::new());
+        let mut detector: Box<dyn Detector + Send + Sync> =
+            if mogi_result.current_course().is_some() {
+                Box::new(RaceFinishDetector::new())
+            } else {
+                Box::new(CourseDetector::new())
+            };
         while let Some(buffer) = rx.recv().await {
-            if i % 60 == 0 {
+            if i % 30 == 0 {
                 log::trace!("fps: {:?}", a.tick());
             } else {
                 a.tick();
@@ -50,9 +55,9 @@ impl Consumer {
             if mogi_result != &last_mogi_state {
                 log::debug!("mogi: {:?}", mogi_result);
                 last_mogi_state = mogi_result.clone();
-                let mut file = File::create("result.txt")?;
-                file.write_all(format!("{mogi_result}").as_bytes())?;
-                log::info!("updated result.txt");
+                let mut file = File::create("result.json")?;
+                file.write_all(serde_json::to_string_pretty(mogi_result)?.as_bytes())?;
+                log::info!("updated result.json");
                 to_gui_tx.send(mogi_result.clone()).await?;
                 log::info!("sent mogi_result to gui");
             }

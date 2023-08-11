@@ -5,21 +5,22 @@ use template_matching::{find_extremes, MatchTemplateMethod, TemplateMatcher};
 use crate::{
     detector::{CourseDetector, PositionDetector},
     mogi_result::MogiResult,
+    size::WIDTH,
 };
 
 use super::Detector;
 
 // based 1280 x 720
 const FLAG_CHECK_PATTERN: [(u32, u32); 9] = [
-    (174, 659),
-    (183, 659),
-    (192, 659),
-    (174, 667),
-    (180, 667),
-    (189, 667),
-    (173, 675),
-    (182, 675),
-    (191, 675),
+    ((174 / 1280 * WIDTH) as _, (659 / 1280 * WIDTH) as _),
+    ((183 / 1280 * WIDTH) as _, (659 / 1280 * WIDTH) as _),
+    ((192 / 1280 * WIDTH) as _, (659 / 1280 * WIDTH) as _),
+    ((174 / 1280 * WIDTH) as _, (667 / 1280 * WIDTH) as _),
+    ((180 / 1280 * WIDTH) as _, (667 / 1280 * WIDTH) as _),
+    ((189 / 1280 * WIDTH) as _, (667 / 1280 * WIDTH) as _),
+    ((173 / 1280 * WIDTH) as _, (675 / 1280 * WIDTH) as _),
+    ((182 / 1280 * WIDTH) as _, (675 / 1280 * WIDTH) as _),
+    ((191 / 1280 * WIDTH) as _, (675 / 1280 * WIDTH) as _),
 ];
 
 pub struct RaceFinishDetector {
@@ -40,16 +41,18 @@ pub enum RaceKind {
 impl RaceFinishDetector {
     pub fn new() -> RaceFinishDetector {
         log::info!("RaceFinishDetector");
+        let results_image =
+            image::load_from_memory(include_bytes!("../assets/results.png")).unwrap();
+        let results_image = results_image.to_luma32f();
+
+        let results_mask_image =
+            image::load_from_memory(include_bytes!("../assets/results_mask.png")).unwrap();
+        let results_mask_image = results_mask_image.to_luma32f();
+
         RaceFinishDetector {
             race_kind: RaceKind::Internet,
-            results_image: image::load_from_memory(include_bytes!("../assets/results.png"))
-                .unwrap()
-                .to_luma32f(),
-            results_mask_image: image::load_from_memory(include_bytes!(
-                "../assets/results_mask.png"
-            ))
-            .unwrap()
-            .to_luma32f(),
+            results_image,
+            results_mask_image,
             results_matcher: TemplateMatcher::new(),
             on_results_vec: Vec::new(),
         }
@@ -64,13 +67,13 @@ impl RaceFinishDetector {
         );
         let results = self.results_matcher.wait_for_result();
         let location_offset_x_min: u32 = match self.race_kind {
-            RaceKind::Internet => 555,
-            RaceKind::Local => 595,
+            RaceKind::Internet => 555 as u32,
+            RaceKind::Local => 595 as u32,
         };
         // let location_offset_x_max = 605;
         let location_offset_x_max = match self.race_kind {
-            RaceKind::Internet => 568,
-            RaceKind::Local => 605,
+            RaceKind::Internet => 568 as u32,
+            RaceKind::Local => 605 as u32,
         };
         if let Some(results) = results {
             let extremes = find_extremes(&results);
@@ -78,7 +81,9 @@ impl RaceFinishDetector {
             if extremes.max_value_location.0 >= location_offset_x_min
                 && extremes.max_value_location.0 <= location_offset_x_max
             {
-                if extremes.max_value_location.1 >= 42 && extremes.max_value_location.1 <= 57 {
+                if extremes.max_value_location.1 >= 42 as u32
+                    && extremes.max_value_location.1 <= 57 as u32
+                {
                     self.on_results_vec.push(true);
                     if self.on_results_vec.len() > 4 {
                         self.on_results_vec.remove(0);

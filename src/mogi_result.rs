@@ -1,11 +1,13 @@
 use std::fmt::Display;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     courses::Course,
     race_result::{Position, RaceResult},
 };
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MogiResult {
     races: Vec<RaceResult>,
     current_course: Option<Course>,

@@ -1,21 +1,33 @@
 use eframe::{
-    egui::{self, CentralPanel, FontData, FontDefinitions, Layout},
+    egui::{self, CentralPanel, ComboBox, FontData, FontDefinitions, Layout},
     emath::Align,
-    epaint::FontFamily,
+    epaint::{ColorImage, FontFamily},
     CreationContext, Frame,
 };
 use egui_dropdown::DropDownBox;
-use egui_extras::{Column, TableBuilder};
-use std::sync::{Arc, Mutex};
+use egui_extras::{Column, RetainedImage, TableBuilder};
+use image::imageops::FilterType;
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::{
+    capture::{open_directshow_device, open_msmf_device},
+    capture_raw::{
+        capture_with_escapi, capture_with_opencv, get_directshow_device_name_map,
+        get_msmf_device_name_map,
+    },
     courses::{Course, COURSES, STRING_COURSE_MAP},
     mogi_result::MogiResult,
     race_result::Position,
+    settings::Settings,
 };
 
 const PPP: f32 = 1.25;
+
+const LOG_LEVELS: [&str; 6] = ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -47,15 +59,55 @@ impl OpenedRace {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+struct BufSettings {
+    device_name: String,
+    directshow: bool,
+    log_level: String,
+    write_log_to_file: bool,
+}
+
+// Settings と BufSettingts は相互に変換できるようにする
+impl From<Settings> for BufSettings {
+    fn from(settings: Settings) -> Self {
+        Self {
+            device_name: settings.device_name().to_string(),
+            directshow: settings.directshow(),
+            log_level: settings.log_level().to_string(),
+            write_log_to_file: settings.write_log_to_file(),
+        }
+    }
+}
+
+impl From<BufSettings> for Settings {
+    fn from(buf_settings: BufSettings) -> Self {
+        Self::new(
+            buf_settings.device_name,
+            buf_settings.directshow,
+            buf_settings.log_level,
+            buf_settings.write_log_to_file,
+        )
+    }
+}
+
 pub struct App {
     // Sender/Receiver for async notifications.
     tx: Arc<Mutex<Sender<Event>>>,
     rx: Arc<Mutex<Receiver<MogiResult>>>,
+
+    settings_tx: Arc<Mutex<Sender<Settings>>>,
+    on_settings: bool,
+    msmf_device_names: Vec<String>,
+    directshow_device_names: Vec<String>,
+    buf_settings: BufSettings,
+
     courses: Vec<Course>,
     mogi_result: MogiResult,
     draft_mogi_result: Option<MogiResult>,
     opened_race: Option<OpenedRace>,
+
+    capture_preview: Option<RetainedImage>,
+    last_preview_updated: Instant,
 }
 
 impl App {
@@ -63,6 +115,8 @@ impl App {
         ctx: &CreationContext,
         tx: Arc<Mutex<Sender<Event>>>,
         rx: Arc<Mutex<Receiver<MogiResult>>>,
+        settings_tx: Arc<Mutex<Sender<Settings>>>,
+        default_settings: Settings,
     ) -> Self {
         let mut fonts = FontDefinitions::default();
         fonts.font_data.insert(
@@ -79,10 +133,61 @@ impl App {
         Self {
             tx,
             rx,
+            settings_tx,
+            on_settings: false,
+            msmf_device_names: get_msmf_device_name_map()
+                .unwrap()
+                .values()
+                .cloned()
+                .collect(),
+            directshow_device_names: get_directshow_device_name_map()
+                .unwrap()
+                .values()
+                .cloned()
+                .collect(),
+            buf_settings: default_settings.into(),
             courses: COURSES.try_lock().unwrap().clone(),
             mogi_result: MogiResult::new(),
             draft_mogi_result: None,
             opened_race: None,
+            capture_preview: None,
+            last_preview_updated: Instant::now(),
+        }
+    }
+
+    fn save_settings(&mut self) {
+        let settings: Settings = self.buf_settings.clone().into();
+        self.settings_tx.lock().unwrap().try_send(settings).unwrap();
+    }
+
+    fn refresh_capture_preview(&mut self, width: f32) {
+        if self.last_preview_updated.elapsed() > Duration::from_millis(1000 / 30) {
+            self.last_preview_updated = Instant::now();
+            let device_name = self.buf_settings.device_name.clone();
+            let img = if self.buf_settings.directshow {
+                let device = open_directshow_device(&device_name).unwrap();
+                let mut device = device.lock().unwrap();
+                capture_with_opencv(&mut device).ok()
+            } else {
+                let device = open_msmf_device(&device_name).unwrap();
+                let mut device = device.lock().unwrap();
+                capture_with_escapi(&mut device).ok()
+            };
+
+            if let Some(img) = img {
+                let img = image::imageops::resize(
+                    &img,
+                    width as _,
+                    (width / 16.0 * 9.0) as _,
+                    FilterType::Nearest,
+                );
+                let width = img.width();
+                let height = img.height();
+                self.capture_preview = Some(RetainedImage::from_color_image(
+                    "aaa",
+                    ColorImage::from_rgb([width as _, height as _], img.as_raw()),
+                ))
+            };
         }
     }
 }
@@ -228,7 +333,7 @@ fn edit_view(
     }
 }
 
-fn show_view(mogi_result: &MogiResult, ui: &mut egui::Ui) {
+fn show_view(mogi_result: &MogiResult, ui: &mut egui::Ui, tx: &Arc<Mutex<Sender<Event>>>) {
     egui::ScrollArea::horizontal()
         .max_height(420.0)
         .show(ui, |ui| {
@@ -274,14 +379,22 @@ fn show_view(mogi_result: &MogiResult, ui: &mut egui::Ui) {
                 });
         });
 
-    if ui.button("Copy").clicked() {
-        ui.output_mut(|o| {
-            mogi_result.iter_races().for_each(|race| {
-                let race_str = format!("{}\t{}\n", &race.course_name(), &race.position());
-                o.copied_text.push_str(&race_str);
-            });
-        })
-    }
+    ui.horizontal(|ui| {
+        if ui.button("Copy").clicked() {
+            ui.output_mut(|o| {
+                mogi_result.iter_races().for_each(|race| {
+                    let race_str = format!("{}\t{}\n", &race.course_name(), &race.position());
+                    o.copied_text.push_str(&race_str);
+                });
+            })
+        }
+        if ui.button("Clear").clicked() {
+            tx.lock()
+                .unwrap()
+                .try_send(Event::EditMogiResult(MogiResult::new()))
+                .unwrap();
+        }
+    });
     ui.separator();
     let current_course_name = mogi_result
         .current_course()
@@ -293,22 +406,101 @@ fn show_view(mogi_result: &MogiResult, ui: &mut egui::Ui) {
     ui.label(format!("合計得点: {total_score}"));
 }
 
+fn settings_view(this: &mut App, ui: &mut egui::Ui, frame: &Frame) {
+    ui.vertical(|ui| {
+        ui.strong("設定");
+        ui.separator();
+        if ui
+            .checkbox(
+                &mut this.buf_settings.directshow,
+                "DirectShowのデバイスを選択する",
+            )
+            .clicked()
+        {
+            this.buf_settings.device_name = "".to_string();
+        };
+        ui.label("キャプチャするデバイスを選択");
+        ComboBox::from_id_source(0)
+            .width(200.0)
+            .selected_text(this.buf_settings.device_name.clone())
+            .show_ui(ui, |ui| {
+                let device_names = if this.buf_settings.directshow {
+                    &this.directshow_device_names
+                } else {
+                    &this.msmf_device_names
+                };
+
+                device_names.iter().for_each(|dn| {
+                    ui.selectable_value(&mut this.buf_settings.device_name, dn.clone(), dn.clone());
+                })
+            });
+        this.refresh_capture_preview(frame.info().window_info.size.x - 15.0);
+        if let Some(captured) = this.capture_preview.as_ref() {
+            captured.show(ui);
+        }
+        ui.separator();
+        ui.label("以下の設定は再起動後に変更が反映される");
+        ui.label("コンソールに出力するログのレベル");
+        ComboBox::from_id_source(1)
+            .selected_text(this.buf_settings.log_level.to_string())
+            .show_ui(ui, |ui| {
+                LOG_LEVELS.iter().for_each(|ll| {
+                    ui.selectable_value(
+                        &mut this.buf_settings.log_level,
+                        ll.to_string(),
+                        ll.to_string(),
+                    );
+                })
+            });
+        ui.checkbox(
+            &mut this.buf_settings.write_log_to_file,
+            "ファイルにTRACEレベルのログを出力",
+        );
+    });
+}
+
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
-        let mut rx = self.rx.lock().unwrap();
-        if let Ok(mogi_result) = rx.try_recv() {
-            self.mogi_result = mogi_result;
-            // TODO: UXとしてどうか判断したい
-            // とりあえず新しいmogi_resultを受け取ったら編集モードを抜ける
-            self.draft_mogi_result = None;
-            self.opened_race = None;
+    fn update(&mut self, ctx: &egui::Context, frame: &mut Frame) {
+        {
+            let mut rx = match self.rx.lock() {
+                Ok(rx) => rx,
+                Err(err) => {
+                    log::error!("failed to lock rx: {}", err);
+                    return;
+                }
+            };
+            if let Ok(mogi_result) = rx.try_recv() {
+                self.mogi_result = mogi_result;
+                // TODO: UXとしてどうか判断したい
+                // とりあえず新しいmogi_resultを受け取ったら編集モードを抜ける
+                self.draft_mogi_result = None;
+                self.opened_race = None;
+            }
         }
         CentralPanel::default().show(ctx, |ui| {
-            ui.heading("lounge-memo");
+            ui.horizontal(|ui| {
+                ui.heading("lounge-memo");
+                ui.with_layout(Layout::right_to_left(Align::Max), |ui| {
+                    let settings_label = if self.on_settings { "OK" } else { "Settings" };
+                    if ui.button(settings_label).clicked() {
+                        self.on_settings = !self.on_settings;
+                        // 設定画面を閉じるときに設定を保存する
+                        if !self.on_settings {
+                            self.save_settings();
+                        }
+                    }
+                });
+            });
+
+            if self.on_settings {
+                settings_view(self, ui, &frame);
+                return;
+            }
+
             if let Some(draft_mogi_result) = self.draft_mogi_result.as_mut() {
                 edit_view(draft_mogi_result, &mut self.opened_race, &self.courses, ui);
             } else {
-                show_view(&self.mogi_result, ui);
+                show_view(&self.mogi_result, ui, &self.tx);
             }
 
             ui.separator();
