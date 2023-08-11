@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::io::Write;
 
 use serde::{Deserialize, Serialize};
 
@@ -73,6 +74,21 @@ impl MogiResult {
             self.created_at.format("%Y%m%d-%H%M%S")
         ))?;
         buffer.save(path)?;
+        Ok(())
+    }
+
+    pub fn save_result(&self) -> anyhow::Result<()> {
+        let path = format!(
+            "results/{}/result.txt",
+            self.created_at.format("%Y%m%d-%H%M%S")
+        );
+        // ディレクトリがなければ作る
+        std::fs::create_dir_all(format!(
+            "results/{}",
+            self.created_at.format("%Y%m%d-%H%M%S")
+        ))?;
+        let mut file = std::fs::File::create(path)?;
+        write!(file, "{}", self)?;
         Ok(())
     }
 }

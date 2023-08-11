@@ -161,15 +161,30 @@ impl App {
     }
 
     fn refresh_capture_preview(&mut self, width: f32) {
+        if self.buf_settings.device_name.is_empty() {
+            return;
+        }
         if self.last_preview_updated.elapsed() > Duration::from_millis(1000 / 30) {
             self.last_preview_updated = Instant::now();
             let device_name = self.buf_settings.device_name.clone();
             let img = if self.buf_settings.directshow {
-                let device = open_directshow_device(&device_name).unwrap();
+                let device = match open_directshow_device(&device_name) {
+                    Ok(device) => device,
+                    Err(err) => {
+                        log::error!("failed to open directshow device: {}", err);
+                        return;
+                    }
+                };
                 let mut device = device.lock().unwrap();
                 capture_with_opencv(&mut device).ok()
             } else {
-                let device = open_msmf_device(&device_name).unwrap();
+                let device = match open_msmf_device(&device_name) {
+                    Ok(device) => device,
+                    Err(err) => {
+                        log::error!("failed to open msmf device: {}", err);
+                        return;
+                    }
+                };
                 let device = device.lock().unwrap();
                 capture_with_escapi(&device).ok()
             };

@@ -60,6 +60,9 @@ impl Consumer {
                 log::info!("updated result.json");
                 to_gui_tx.send(mogi_result.clone()).await?;
                 log::info!("sent mogi_result to gui");
+                if mogi_result.iter_races().len() == 12 {
+                    mogi_result.save_result()?;
+                }
             }
             i += 1;
         }
