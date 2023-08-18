@@ -58,6 +58,9 @@ impl Consumer {
                 let mut file = File::create("result.json")?;
                 file.write_all(serde_json::to_string_pretty(mogi_result)?.as_bytes())?;
                 log::info!("updated result.json");
+                let mut file = File::create("result.txt")?;
+                file.write_all(mogi_result.to_string().as_bytes())?;
+                log::info!("updated result.txt");
                 to_gui_tx.send(mogi_result.clone()).await?;
                 log::info!("sent mogi_result to gui");
                 if mogi_result.iter_races().len() == 12 {
