@@ -69,8 +69,8 @@ pub enum Position {
 }
 
 impl Position {
-    pub fn from_index(index: usize) -> Position {
-        match index {
+    pub fn from_index(index: usize) -> Option<Position> {
+        let positon = match index {
             0 => Position::First,
             1 => Position::Second,
             2 => Position::Third,
@@ -83,8 +83,9 @@ impl Position {
             9 => Position::Tenth,
             10 => Position::Eleventh,
             11 => Position::Twelfth,
-            _ => panic!("invalid index: {}", index),
-        }
+            _ => return None,
+        };
+        Some(positon)
     }
 
     pub fn to_score(self) -> u32 {

@@ -1,5 +1,7 @@
 use eframe::{
-    egui::{self, CentralPanel, ComboBox, FontData, FontDefinitions, Layout},
+    egui::{
+        self, CentralPanel, ComboBox, FontData, FontDefinitions, Grid, Key, Layout, ScrollArea,
+    },
     emath::Align,
     epaint::{ColorImage, FontFamily},
     CreationContext, Frame,
@@ -218,6 +220,7 @@ fn course_dropdown(ui: &mut egui::Ui, courses: &[Course], buffer: &mut String) {
     });
 }
 
+// TODO: 複雑すぎる どうにかしろ
 fn edit_view(
     draft_mogi_result: &mut MogiResult,
     opened_race: &mut Option<OpenedRace>,
@@ -230,56 +233,53 @@ fn edit_view(
         .as_ref()
         .map(|or| or.buffer.clone())
         .unwrap_or_else(|| "".to_string());
-    let mut position_response = None;
+    let mut save_editing_course = false;
 
     // TODO: スクロールさせたいが、なぜかできない
-    egui::ScrollArea::horizontal()
-        .max_height(280.0)
-        .show(ui, |ui| {
-            egui::Grid::new("edit_view").show(ui, |ui| {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
-                    draft_mogi_result
-                        .iter_races()
-                        .enumerate()
-                        .for_each(|(index, race)| {
-                            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-                                ui.label(format!("{:02}: ", index + 1));
-                                if ui.button(race.course_name()).clicked() {
-                                    *opened_race = Some(OpenedRace::new(
-                                        OpenedIndex::Result(index),
-                                        race.course(),
-                                        Some(race.position()),
-                                    ));
-                                };
-                                if ui.button(race.position().to_string()).clicked() {
-                                    *opened_race = Some(OpenedRace::new(
-                                        OpenedIndex::Result(index),
-                                        race.course(),
-                                        Some(race.position()),
-                                    ));
-                                };
-                            });
-                            if let Some(OpenedRace {
-                                index: OpenedIndex::Result(r_index),
-                                buffer,
-                                position_input,
-                                ..
-                            }) = opened_race.as_mut()
-                            {
-                                if *r_index == index {
-                                    ui.group(|ui| {
-                                        course_dropdown(ui, courses, buffer);
-                                        let response = ui.text_edit_singleline(position_input);
-                                        if response.changed() {
-                                            position_response = Some(response);
-                                        }
-                                    });
-                                }
-                            }
+    ScrollArea::horizontal().max_height(280.0).show(ui, |ui| {
+        Grid::new("edit_view").show(ui, |ui| {
+            ui.with_layout(Layout::top_down(Align::Min), |ui| {
+                draft_mogi_result
+                    .iter_races()
+                    .enumerate()
+                    .for_each(|(index, race)| {
+                        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                            ui.label(format!("{:02}: ", index + 1));
+                            if ui.button(race.course_name()).clicked() {
+                                *opened_race = Some(OpenedRace::new(
+                                    OpenedIndex::Result(index),
+                                    race.course(),
+                                    Some(race.position()),
+                                ));
+                            };
+                            if ui.button(race.position().to_string()).clicked() {
+                                *opened_race = Some(OpenedRace::new(
+                                    OpenedIndex::Result(index),
+                                    race.course(),
+                                    Some(race.position()),
+                                ));
+                            };
                         });
-                });
+                        if let Some(OpenedRace {
+                            index: OpenedIndex::Result(r_index),
+                            buffer,
+                            position_input,
+                            ..
+                        }) = opened_race.as_mut()
+                        {
+                            if *r_index == index {
+                                ui.group(|ui| {
+                                    course_dropdown(ui, courses, buffer);
+                                    let resp = ui.text_edit_singleline(position_input);
+                                    save_editing_course = ui.button("Save").clicked()
+                                        || resp.ctx.input(|i| i.key_pressed(Key::Enter));
+                                });
+                            }
+                        }
+                    });
             });
         });
+    });
     ui.label("現在のコース: ");
     let current_course = draft_mogi_result.current_course().clone();
     let label = current_course
@@ -301,10 +301,9 @@ fn edit_view(
     {
         ui.group(|ui| {
             course_dropdown(ui, courses, buffer);
-            let response = ui.text_edit_singleline(position_input);
-            if response.changed() {
-                position_response = Some(response);
-            }
+            let resp = ui.text_edit_singleline(position_input);
+            save_editing_course =
+                ui.button("Save").clicked() || resp.ctx.input(|i| i.key_pressed(Key::Enter));
         });
     }
     if let Some(OpenedRace {
@@ -323,24 +322,36 @@ fn edit_view(
                 }
             }
         }
-        if position_response.is_some() {
-            if let Ok(n) = position_input.parse::<usize>() {
-                if (1..=12).contains(&n) {
-                    let new_position = Position::from_index(n - 1);
-                    *position = Some(new_position);
-                    match index {
-                        OpenedIndex::Result(idx) => {
-                            draft_mogi_result.set_position(*idx, new_position);
-                        }
-                        OpenedIndex::Current => {
-                            if draft_mogi_result.current_course().is_some() {
-                                log::debug!("set current position");
-                                draft_mogi_result.set_current_position(new_position);
-                                position_input.clear();
-                                buffer.clear();
-                            }
+        if save_editing_course {
+            let new_position = position_input
+                .parse::<usize>()
+                .map(|n| Position::from_index(n - 1))
+                .ok()
+                .flatten();
+            match index {
+                OpenedIndex::Result(idx) => {
+                    if let Some(new_position) = new_position {
+                        draft_mogi_result.set_position(*idx, new_position);
+                        *position = Some(new_position);
+                        position_input.clear();
+                        buffer.clear();
+                        opened_race.take();
+                    }
+                }
+                OpenedIndex::Current => {
+                    if draft_mogi_result.current_course().is_some() {
+                        log::debug!("set current position");
+                        if let Some(new_position) = new_position {
+                            draft_mogi_result.set_current_position(new_position);
                         }
                     }
+                    if let Some(new_position) = new_position {
+                        draft_mogi_result.set_current_position(new_position);
+                        *position = Some(new_position);
+                    }
+                    position_input.clear();
+                    buffer.clear();
+                    opened_race.take();
                 }
             }
         }
@@ -520,7 +531,7 @@ impl eframe::App for App {
             ui.separator();
 
             if let Some(draft_mogi_result) = self.draft_mogi_result.as_mut() {
-                if ui.button("Save").clicked() {
+                if ui.button("Save All").clicked() {
                     let new_mogi_result = draft_mogi_result.clone();
                     self.mogi_result = new_mogi_result.clone();
                     self.tx

@@ -67,6 +67,9 @@ impl Detector for PositionDetector {
 
         if let Some(yellow_line_index) = yellow_line_index {
             let position = Position::from_index(yellow_line_index);
+            let position = position.unwrap_or_else(|| {
+                panic!("invalid position, yellow_line_index is invalid: {yellow_line_index}")
+            });
             mogi_result.set_current_position(position);
             if self.positions_vec.is_empty() {
                 // 初回チェック
