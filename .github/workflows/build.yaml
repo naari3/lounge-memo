@@ -1,0 +1,41 @@
+name: windows
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+      # VCPKGRS_TRIPLET: x64-windows-static-md
+      VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
+      VCPKG_INSTALLED_ROOT: ${{ github.workspace }}/vcpkg_installed
+    steps:
+      - uses: actions/checkout@v3
+      - run: rustup toolchain install stable --profile minimal
+      - uses: Swatinem/rust-cache@v2
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v3
+        with:
+          path: |
+            C:/Program Files/LLVM
+            ./llvm
+          key: llvm-16
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "16"
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+      - uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 417119555f155f6044dec7a379cd25466e339873
+          runVcpkgInstall: true
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v1
+        with:
+          name: lounge-memo
+          path: target/release/lounge-memo.exe

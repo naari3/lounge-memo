@@ -3413,8 +3413,7 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 [[package]]
 name = "vcpkg"
 version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+source = "git+https://github.com/mcgoo/vcpkg-rs?rev=56e85dcb40721012e6bb6e49d8aa2b0cd2fa1ec5#56e85dcb40721012e6bb6e49d8aa2b0cd2fa1ec5"
 
 [[package]]
 name = "vec_map"

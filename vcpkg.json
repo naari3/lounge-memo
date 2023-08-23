@@ -1,0 +1,19 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "lounge-memo",
+    "version": "0.0.1",
+    "dependencies": [
+        {
+            "name": "opencv4",
+            "version>=": "4.8.0"
+        },
+        "ffmpeg"
+    ],
+    "builtin-baseline": "b73601a4616c21923cfb6f3a5263a9788165efbd",
+    "overrides": [
+        {
+            "name": "opencv4",
+            "version": "4.8.0"
+        }
+    ]    
+}

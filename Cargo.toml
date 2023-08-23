@@ -39,6 +39,12 @@ serde = { version = "1.0.183", features = ["derive"] }
 serde_json = "1.0"
 wgpu = "0.17.0"
 
+# crateにある最新のvcpkgはまだ VCPKG_INSTALLED_ROOT に対応していないので、直接指定する
+# おそらく0.2.16がリリースされたらこのセクションは削除できる
+[patch.crates-io.vcpkg]
+git = "https://github.com/mcgoo/vcpkg-rs"
+rev = "56e85dcb40721012e6bb6e49d8aa2b0cd2fa1ec5"
+
 [dev-dependencies]
 ffmpeg-next = { version = "6.0.0" }
 criterion = { version = "0.5", features = ["html_reports"] }

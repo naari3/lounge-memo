@@ -1,4 +1,5 @@
 /target
+/vcpkg_installed
 
 *.png
 !/src/assets/*

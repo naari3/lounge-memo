@@ -71,8 +71,9 @@ Options:
 ### Environment
 
 - OpenCV installed
-  - `vcpkg install opencv4:x64-windows-static-md`
+  - `vcpkg install`
 - llvm installed
+  - vcpkg経由だとあまりにも遅いので別途インストールして
 
 ### test
 
