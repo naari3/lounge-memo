@@ -76,11 +76,18 @@ impl RaceFinishDetector {
             image::load_from_memory(include_bytes!("../assets/results_mask.png")).unwrap();
         let results_mask_image = results_mask_image.to_luma32f();
 
+        // デフォルトのDX12だとなぜかAccess Violationが発生するので、Vulkanを使う
+        // ref: https://github.com/gfx-rs/wgpu/issues/3498
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::VULKAN,
+            dx12_shader_compiler: Default::default(),
+        });
+
         RaceFinishDetector {
             race_kind: RaceKind::Internet,
             results_image,
             results_mask_image,
-            results_matcher: TemplateMatcher::new(),
+            results_matcher: TemplateMatcher::new_from_instance(instance),
             on_results_vec: Vec::new(),
         }
     }
