@@ -111,18 +111,18 @@ impl Display for MogiResult {
 
 #[cfg(test)]
 mod tests {
-    use crate::courses::Series;
+    use crate::courses::Console;
 
     use super::*;
 
     #[test]
     fn test_mogi_result() {
         let mut mogi_result = MogiResult::new();
-        mogi_result.set_current_course(Course::new("ドルフィンみさき".to_string(), Series::New));
+        mogi_result.set_current_course(Course::new("ドルフィンみさき".to_string(), Console::New));
         mogi_result.set_current_position(Position::First);
         assert_eq!(mogi_result.races.len(), 1);
 
-        mogi_result.set_current_course(Course::new("ヨッシーアイランド".to_string(), Series::New));
+        mogi_result.set_current_course(Course::new("ヨッシーアイランド".to_string(), Console::New));
         mogi_result.set_current_position(Position::Second);
         assert_eq!(mogi_result.total_score(), 27);
     }
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn test_mogi_result_reset_current_course() {
         let mut mogi_result = MogiResult::new();
-        mogi_result.set_current_course(Course::new("ドルフィンみさき".to_string(), Series::New));
+        mogi_result.set_current_course(Course::new("ドルフィンみさき".to_string(), Console::New));
         mogi_result.reset_current_course();
         assert_eq!(mogi_result.current_course, None);
     }

@@ -9,7 +9,7 @@ use crate::word::{normalize_japanese_characters, Word};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Series {
+pub enum Console {
     SFC,
     GBA,
     N64,
@@ -21,18 +21,18 @@ pub enum Series {
     Tour,
 }
 
-impl Display for Series {
+impl Display for Console {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Series::SFC => write!(f, "SFC"),
-            Series::GBA => write!(f, "GBA"),
-            Series::N64 => write!(f, "N64"),
-            Series::GC => write!(f, "GC"),
-            Series::DS => write!(f, "DS"),
-            Series::Wii => write!(f, "Wii"),
-            Series::_3DS => write!(f, "3DS"),
-            Series::New => write!(f, ""),
-            Series::Tour => write!(f, "Tour"),
+            Console::SFC => write!(f, "SFC"),
+            Console::GBA => write!(f, "GBA"),
+            Console::N64 => write!(f, "N64"),
+            Console::GC => write!(f, "GC"),
+            Console::DS => write!(f, "DS"),
+            Console::Wii => write!(f, "Wii"),
+            Console::_3DS => write!(f, "3DS"),
+            Console::New => write!(f, ""),
+            Console::Tour => write!(f, "Tour"),
         }
     }
 }
@@ -40,23 +40,23 @@ impl Display for Series {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Course {
     name: String,
-    series: Series,
+    console: Console,
 }
 
 impl Course {
-    pub fn new(name: String, series: Series) -> Self {
-        Self { name, series }
+    pub fn new(name: String, console: Console) -> Self {
+        Self { name, console }
     }
 }
 
 impl Display for Course {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // もしSeriesがNewだったら、シリーズ名を表示しない
+        // もしConsoleがNewだったら、シリーズ名を表示しない
         // それ以外の場合はスペースを間に挟んでシリーズ名を表示する
-        if self.series == Series::New {
+        if self.console == Console::New {
             write!(f, "{}", self.name)
         } else {
-            write!(f, "{} {}", self.series, self.name)
+            write!(f, "{} {}", self.console, self.name)
         }
     }
 }
@@ -69,43 +69,43 @@ pub static COURSE_SHORTHAND_MAP: Lazy<Mutex<HashMap<String, String>>> = Lazy::ne
 
 pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
     let mut courses = Vec::new();
-    for (name, series, shorthands) in [
+    for (name, console, shorthands) in [
         // https://github.com/sheat-git/mk8dx.py/blob/main/mk8dx/data.py#L311
         // キノコカップ
         (
             "マリオカートスタジアム",
-            Series::New,
+            Console::New,
             vec!["mks", "ﾏﾘｵｶｰﾄｽﾀｼﾞｱﾑ", "ﾏﾘｶｽ"],
         ),
         (
             "ウォーターパーク",
-            Series::New,
+            Console::New,
             vec!["wp", "ｳｫｰﾀﾊﾟｰｸ", "ｦｰﾀｰﾊﾟｰｸ", "ｳｫﾀﾊﾟ", "ｦﾀﾊﾟ", "ｵﾀﾊﾟ"],
         ),
         (
             "スイーツキャニオン",
-            Series::New,
+            Console::New,
             vec!["ssc", "ｽｲｰﾂｷｬﾆｵﾝ", "ｽｲｷｬﾆ"],
         ),
         (
             "ドッスンいせき",
-            Series::New,
+            Console::New,
             vec!["tr", "ﾄﾞｯｽﾝｲｾｷ", "ﾄﾞｯｽﾝ", "ｲｾｷ", "ﾄﾞｯｽﾝ遺跡", "遺跡"],
         ),
         // フラワーカップ
         (
             "マリオサーキット",
-            Series::New,
+            Console::New,
             vec!["mc", "ﾏﾘｵｻｰｷｯﾄ", "ﾏﾘｻ", "新ﾏﾘｻ", "ｼﾝﾏﾘｻ"],
         ),
         (
             "キノピオハーバー",
-            Series::New,
+            Console::New,
             vec!["th", "ｷﾉﾋﾟｵﾊｰﾊﾞｰ", "ﾊｰﾊﾞｰ"],
         ),
         (
             "ねじれマンション",
-            Series::New,
+            Console::New,
             vec![
                 "tm",
                 "ﾈｼﾞﾚﾏﾝｼｮﾝ",
@@ -119,28 +119,28 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "ヘイホーこうざん",
-            Series::New,
+            Console::New,
             vec!["sgf", "ﾍｲﾎｰｺｳｻﾞﾝ", "ﾍｲﾎｰ鉱山", "ﾍｲｺｰ", "ﾍｲｺｳ", "ﾍｲ鉱"],
         ),
         // スターカップ
         (
             "サンシャインくうこう",
-            Series::New,
+            Console::New,
             vec!["sa", "ｻﾝｼｬｲﾝｸｳｺｳ", "空港", "ｸｳｺｳ", "ｻﾝｼｬｲﾝ"],
         ),
         (
             "ドルフィンみさき",
-            Series::New,
+            Console::New,
             vec!["ds", "ﾄﾞﾙﾌｨﾝﾐｻｷ", "ﾄﾞﾙﾐ", "ﾐｻｷ", "ﾄﾞﾙﾌｨﾝ岬", "岬"],
         ),
         (
             "エレクトロドリーム",
-            Series::New,
+            Console::New,
             vec!["ed", "ｴﾚｸﾄﾛﾄﾞﾘｰﾑ", "ｴﾚﾄﾞ", "ｴﾚﾄﾞﾘ"],
         ),
         (
             "ワリオスノーマウンテン",
-            Series::New,
+            Console::New,
             vec![
                 "mw",
                 "ﾜﾘｵｽﾉｰﾏｳﾝﾃﾝ",
@@ -154,64 +154,64 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         // スペシャルカップ
         (
             "スカイガーデン",
-            Series::New,
+            Console::New,
             vec!["cc", "ｽｶｲｶﾞｰﾃﾞﾝ", "ｽｶｶﾞ"],
         ),
         (
             "ホネホネさばく",
-            Series::New,
+            Console::New,
             vec!["bdd", "ﾎﾈﾎﾈｻﾊﾞｸ", "ﾎﾈｻﾊﾞ", "ﾎﾈﾎﾈ"],
         ),
         (
             "クッパキャッスル",
-            Series::New,
+            Console::New,
             vec!["bc", "ｸｯﾊﾟｷｬｯｽﾙ", "ｸﾊﾟｷｬ", "ｸｷｬﾊﾟ", "ｸｯｷｬﾊﾟｯｽﾙ"],
         ),
         (
             "レインボーロード",
-            Series::New,
+            Console::New,
             vec!["rr", "ﾚｲﾝﾎﾞｰﾛｰﾄﾞ", "新虹", "ｼﾝﾆｼﾞ"],
         ),
         // たまごカップ
         (
             "ヨッシーサーキット",
-            Series::GC,
+            Console::GC,
             vec!["dyc", "yc", "ﾖｯｼｰｻｰｷｯﾄ", "ﾖｼｻ"],
         ),
         (
             "エキサイトバイク",
-            Series::New,
+            Console::New,
             vec!["dea", "ea", "ｴｷｻｲﾄﾊﾞｲｸ", "ｴｷﾊﾞ"],
         ),
         (
             "ドラゴンロード",
-            Series::New,
+            Console::New,
             vec!["ddd", "dd", "ﾄﾞﾗｺﾞﾝﾛｰﾄﾞ", "ﾄﾞﾗﾛ"],
         ),
         (
             "ミュートシティ",
-            Series::New,
+            Console::New,
             vec!["dmc", "ﾐｭｰﾄｼﾃｨ", "ﾐｭｰﾄ"],
         ),
         // どうぶつカップ
         (
             "ベビィパーク",
-            Series::GC,
+            Console::GC,
             vec!["dbp", "bp", "ﾍﾞﾋﾞｨﾊﾟｰｸ", "ﾍﾞﾋﾞｰﾊﾟｰｸ", "ﾍﾞﾋﾞﾊﾟ"],
         ),
         (
             "チーズランド",
-            Series::GBA,
+            Console::GBA,
             vec!["dcl", "cl", "ﾁｰｽﾞﾗﾝﾄﾞ", "ﾁｰｽﾞ"],
         ),
         (
             "ネイチャーロード",
-            Series::New,
+            Console::New,
             vec!["dww", "ww", "ﾈｲﾁｬｰﾗﾝﾄﾞ", "ﾈｲﾁｬｰ", "ﾅﾁｭﾚ"],
         ),
         (
             "どうぶつの森",
-            Series::New,
+            Console::New,
             vec![
                 "dac",
                 "ac",
@@ -226,28 +226,28 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         // こうらカップ
         (
             "モーモーカントリー",
-            Series::Wii,
+            Console::Wii,
             vec!["rmmm", "mmm", "ﾓｰﾓｰｶﾝﾄﾘｰ", "ﾓﾓｶﾝ", "ﾓｰﾓｰ"],
         ),
         (
             "マリオサーキット",
-            Series::GBA,
+            Console::GBA,
             vec!["rmc", "gba", "ｸﾞﾊﾞ", "gbaﾏﾘｵｻｰｷｯﾄ", "gbaﾏﾘｻ"],
         ),
         (
             "プクプクビーチ",
-            Series::DS,
+            Console::DS,
             vec!["rccb", "ccb", "ﾌﾟｸﾌﾟｸﾋﾞｰﾁ", "ﾌﾟｸﾌﾟｸ", "ﾌﾟｸﾋﾞ"],
         ),
         (
             "キノピオハイウェイ",
-            Series::N64,
+            Console::N64,
             vec!["rtt", "tt", "ｷﾉﾋﾟｵﾊｲｳｪｲ", "ﾊｲｳｪｲ"],
         ),
         // バナナカップ
         (
             "カラカラさばく",
-            Series::GC,
+            Console::GC,
             vec![
                 "rddd",
                 "ｶﾗｶﾗｻﾊﾞｸ",
@@ -260,113 +260,113 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "ドーナツへいや3",
-            Series::SFC,
+            Console::SFC,
             vec!["rdp3", "rdp", "dp3", "ﾄﾞｰﾅﾂﾍｲﾔ", "ﾍｲﾔ", "ﾄﾞｰﾅﾂ平野", "平野"],
         ),
         (
             "ピーチサーキット",
-            Series::N64,
+            Console::N64,
             vec!["rrry", "rry", "ﾋﾟｰﾁｻｰｷｯﾄ", "ﾋﾟﾁｻ"],
         ),
         (
             "DKジャングル",
-            Series::_3DS,
+            Console::_3DS,
             vec!["rdkj", "dk", "dkj", "dkｼﾞｬﾝｸﾞﾙ", "ｼﾞｬﾝｸﾞﾙ"],
         ),
         // このはカップ
         (
             "ワリオスタジアム",
-            Series::DS,
+            Console::DS,
             vec!["rws", "ws", "ﾜﾘｵｽﾀｼﾞｱﾑ", "ﾜﾘｽﾀ"],
         ),
         (
             "シャーベットランド",
-            Series::GC,
+            Console::GC,
             vec!["rsl", "sl", "ｼｬｰﾍﾞｯﾄﾗﾝﾄﾞ", "ｼｬｰﾍﾞｯﾄ", "ｼｬﾍﾞﾗﾝ", "ｼｬﾍﾞ"],
         ),
         (
             "ミュージックパーク",
-            Series::_3DS,
+            Console::_3DS,
             vec!["rmp", "mp", "ﾐｭｰｼﾞｯｸﾊﾟｰｸ", "ﾐｭｰﾊﾟ"],
         ),
         (
             "ヨッシーバレー",
-            Series::N64,
+            Console::N64,
             vec!["ryv", "yv", "ﾖｯｼｰﾊﾞﾚｰ", "ﾖｼﾊﾞ"],
         ),
         // サンダーカップ
         (
             "チクタクロック",
-            Series::DS,
+            Console::DS,
             vec!["rttc", "ttc", "ﾁｸﾀｸﾛｯｸ", "ﾁｸﾀｸ"],
         ),
         (
             "パックンスライダー",
-            Series::_3DS,
+            Console::_3DS,
             vec!["rpps", "pps", "ﾊﾟｯｸﾝｽﾗｲﾀﾞｰ", "ﾊﾟｸｽﾗ", "ﾊﾟｯｸﾝ"],
         ),
         (
             "グラグラかざん",
-            Series::Wii,
+            Console::Wii,
             vec!["rgv", "gv", "ｸﾞﾗｸﾞﾗｶｻﾞﾝ", "ｸﾞﾗｸﾞﾗ", "ｶｻﾞﾝ"],
         ),
         (
             "レインボーロード",
-            Series::N64,
+            Console::N64,
             vec!["rrrd", "rrd", "64ﾚｲﾝﾎﾞｰﾛｰﾄﾞ", "64ﾆｼﾞ", "64虹", "ﾛｸﾖﾝ"],
         ),
         // ゼルダカップ
         (
             "ワリオこうざん",
-            Series::Wii,
+            Console::Wii,
             vec!["dwgm", "wgm", "ﾜﾘｵｺｳｻﾞﾝ", "ﾜﾘｺｳ", "ﾜﾘｵ鉱山", "ﾜﾘ鉱"],
         ),
         (
             "レインボーロード",
-            Series::SFC,
+            Console::SFC,
             vec!["drr", "sfcﾆｼﾞ", "sfcﾚｲﾝﾎﾞｰﾛｰﾄﾞ", "sfc虹", "sfc"],
         ),
         (
             "ツルツルツイスター",
-            Series::New,
+            Console::New,
             vec!["diio", "iio", "ﾂﾙﾂﾙﾂｲｽﾀｰ", "ﾂﾂﾂ", "ﾂﾙﾂﾙ"],
         ),
         (
             "ハイラルサーキット",
-            Series::New,
+            Console::New,
             vec!["dhc", "hc", "ﾊｲﾗﾙｻｰｷｯﾄ", "ﾊｲﾗﾙ"],
         ),
         // ベルカップ
         (
             "ネオクッパシティ",
-            Series::_3DS,
+            Console::_3DS,
             vec!["dnbc", "nbc", "ﾈｵｸｯﾊﾟｼﾃｨ", "ﾈｵﾊﾟ", "ﾈｵｸｯﾊﾟ"],
         ),
         (
             "リボンロード",
-            Series::GBA,
+            Console::GBA,
             vec!["drir", "rir", "ﾘﾎﾞﾝﾛｰﾄﾞ", "ﾘﾎﾞﾝ"],
         ),
         (
             "リンリンメトロ",
-            Series::New,
+            Console::New,
             vec!["dsbs", "sbs", "ﾘﾝﾘﾝﾒﾄﾛ", "ﾘﾝﾒﾄ"],
         ),
-        ("ビッグブルー", Series::New, vec!["dbb", "bb", "ﾋﾞｯｸﾞﾌﾞﾙｰ"]),
+        ("ビッグブルー", Console::New, vec!["dbb", "bb", "ﾋﾞｯｸﾞﾌﾞﾙｰ"]),
         // パワフルカップ
         (
             "パリプロムナード",
-            Series::Tour,
+            Console::Tour,
             vec!["bpp", "pp", "paris", "ﾊﾟﾘﾌﾟﾛﾑﾅｰﾄﾞ", "ﾊﾟﾘ"],
         ),
         (
             "キノピオサーキット",
-            Series::_3DS,
+            Console::_3DS,
             vec!["btc", "tc", "ｷﾉﾋﾟｵｻｰｷｯﾄ", "ｷﾉｻ"],
         ),
         (
             "チョコマウンテン",
-            Series::N64,
+            Console::N64,
             vec![
                 "bcmo",
                 "bcm64",
@@ -381,7 +381,7 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "ココナッツモール",
-            Series::Wii,
+            Console::Wii,
             vec![
                 "bcma",
                 "bcom",
@@ -398,7 +398,7 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         // まねきネコカップ
         (
             "トーキョースクランブル",
-            Series::Tour,
+            Console::Tour,
             vec![
                 "btb",
                 "tb",
@@ -414,7 +414,7 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "キノコリッジウェイ",
-            Series::DS,
+            Console::DS,
             vec![
                 "bsr",
                 "sr",
@@ -428,7 +428,7 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "スカイガーデン",
-            Series::GBA,
+            Console::GBA,
             vec![
                 "bsg",
                 "sg",
@@ -441,18 +441,18 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "ニンニンドージョー",
-            Series::New,
+            Console::New,
             vec!["bnh", "nh", "ﾆﾝﾆﾝﾄﾞｰｼﾞｮｰ", "ﾆﾝｼﾞｮｰ", "ﾆﾝﾆﾝ"],
         ),
         // カブカップ
         (
             "ニューヨークドリーム",
-            Series::Tour,
+            Console::Tour,
             vec!["bnym", "nym", "ﾆｭｰﾖｰｸﾄﾞﾘｰﾑ", "ﾆｭｰﾖｰｸ", "ﾆｭｰﾄﾞﾘ", "ny"],
         ),
         (
             "マリオサーキット3",
-            Series::SFC,
+            Console::SFC,
             vec![
                 "bmc3",
                 "mc3",
@@ -466,66 +466,66 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "カラカラさばく",
-            Series::N64,
+            Console::N64,
             vec!["bkd", "kd", "64ｶﾗｻﾊﾞ", "64ｶﾗ", "64ｻﾊﾞ"],
         ),
         (
             "ワルイージピンボール",
-            Series::DS,
+            Console::DS,
             vec!["bwp", "ﾜﾙｲｰｼﾞﾋﾟﾝﾎﾞｰﾙ", "ﾜﾙﾋﾟﾝ", "ﾋﾟﾝﾎﾞｰﾙ"],
         ),
         // プロペラカップ
         (
             "シドニーサンシャイン",
-            Series::Tour,
+            Console::Tour,
             vec!["bss", "ss", "bsys", "sys", "ｼﾄﾞﾆｰｻﾝｼｬｲﾝ", "ｼﾄﾞﾆｰ"],
         ),
-        ("スノーランド", Series::GBA, vec!["bsl", "ｽﾉｰﾗﾝﾄﾞ", "ｽﾉﾗﾝ"]),
+        ("スノーランド", Console::GBA, vec!["bsl", "ｽﾉｰﾗﾝﾄﾞ", "ｽﾉﾗﾝ"]),
         (
             "キノコキャニオン",
-            Series::Wii,
+            Console::Wii,
             vec!["bmg", "mg", "ｷﾉｺｷｬﾆｵﾝ", "ｷﾉｷｬﾆ", "ｷｬﾆｵﾝ"],
         ),
         (
             "アイスビルディング",
-            Series::New,
+            Console::New,
             vec!["bshs", "shs", "ｱｲｽﾋﾞﾙﾃﾞｨﾝｸﾞ", "ｱｲｽ"],
         ),
         // ゴロいわカップ
         (
             "ロンドンアベニュー",
-            Series::Tour,
+            Console::Tour,
             vec!["bll", "ll", "ﾛﾝﾄﾞﾝｱﾍﾞﾆｭｰ", "ﾛﾝﾄﾞﾝ"],
         ),
         (
             "テレサレイク",
-            Series::GBA,
+            Console::GBA,
             vec!["bbl", "bl", "ﾃﾚｻﾚｲｸ", "ﾚｲｸ", "ﾃﾚｲｸ"],
         ),
         (
             "ロックロックマウンテン",
-            Series::_3DS,
+            Console::_3DS,
             vec!["brrm", "rrm", "ﾛｯｸﾛｯｸﾏｳﾝﾃﾝ", "ﾛｸﾏ", "ﾛｯｸ", "岩山", "ﾛｯｸﾛｯｸ"],
         ),
         (
             "メイプルツリーハウス",
-            Series::Wii,
+            Console::Wii,
             vec!["bmt", "mt", "ﾒｲﾌﾟﾙﾂﾘｰﾊｳｽ", "ﾒｲﾌﾟﾙ"],
         ),
         // ムーンカップ
         (
             "ベルリンシュトラーセ",
-            Series::Tour,
+            Console::Tour,
             vec!["bbb", "ﾍﾞﾙﾘﾝｼｭﾄﾗｰｾ", "ﾍﾞﾙﾘﾝ"],
         ),
         (
             "ピーチガーデン",
-            Series::DS,
+            Console::DS,
             vec!["bpg", "pg", "ﾋﾟｰﾁｶﾞｰﾃﾞﾝ", "ﾋﾟﾁｶﾞ", "ｶﾞｰﾃﾞﾝ"],
         ),
         (
             "メリーメリーマウンテン",
-            Series::New,
+            Console::New,
             vec![
                 "bmm",
                 "mm",
@@ -539,13 +539,13 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "レインボーロード",
-            Series::_3DS,
+            Console::_3DS,
             vec!["brr", "3dsﾆｼﾞ", "3ds虹", "7ﾆｼﾞ", "7虹"],
         ),
         // フルーツカップ
         (
             "アムステルダムブルーム",
-            Series::Tour,
+            Console::Tour,
             vec![
                 "bad",
                 "ad",
@@ -558,12 +558,12 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "リバーサイドパーク",
-            Series::GBA,
+            Console::GBA,
             vec!["brp", "rp", "ﾘﾊﾞｰｻｲﾄﾞﾊﾟｰｸ", "ﾘﾊﾞｰｻｲﾄﾞ", "ﾘﾊﾞﾊﾟ"],
         ),
         (
             "DKスノーボードクロス",
-            Series::Wii,
+            Console::Wii,
             vec![
                 "bdks",
                 "dks",
@@ -576,28 +576,28 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "ヨッシーアイランド",
-            Series::New,
+            Console::New,
             vec!["byi", "yi", "ﾖｯｼｰｱｲﾗﾝﾄﾞ", "ﾖｼｱｲ"],
         ),
         // ブーメランカップ
         (
             "バンコクラッシュ",
-            Series::Tour,
+            Console::Tour,
             vec!["bbr", "br", "bangkok", "ﾊﾞﾝｺｸﾗｯｼｭ", "ﾊﾞﾝｺｸ"],
         ),
         (
             "マリオサーキット",
-            Series::DS,
+            Console::DS,
             vec!["bmc", "dsﾏﾘｵｻｰｷｯﾄ", "dsﾏﾘｻ"],
         ),
         (
             "ワルイージスタジアム",
-            Series::GC,
+            Console::GC,
             vec!["bws", "ﾜﾙｲｰｼﾞｽﾀｼﾞｱﾑ", "ﾜﾙｽﾀ"],
         ),
         (
             "シンガポールスプラッシュ",
-            Series::Tour,
+            Console::Tour,
             vec![
                 "bssy",
                 "ssy",
@@ -611,28 +611,28 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         // ハネカップ
         (
             "アテネポリス",
-            Series::Tour,
+            Console::Tour,
             vec!["bada", "ada", "athens", "ｱﾃﾈﾎﾟﾘｽ", "ｱﾃﾈ"],
         ),
         (
             "デイジークルーザー",
-            Series::GC,
+            Console::GC,
             vec!["bdc", "dc", "ﾃﾞｲｼﾞｰｸﾙｰｻﾞｰ", "ﾃﾞｲｸﾙ"],
         ),
         (
             "ムーンリッジ&ハイウェイ",
-            Series::Wii,
+            Console::Wii,
             vec!["bmh", "mh", "ﾑｰﾝﾘｯｼﾞ", "ﾑﾝﾊｲ", "ﾑｰﾝﾊｲ"],
         ),
         (
             "シャボンロード",
-            Series::New,
+            Console::New,
             vec!["bscs", "scs", "ｼｬﾎﾞﾝﾛｰﾄﾞ", "ｼｬﾎﾞﾝ", "ｼｬﾎﾞﾛ"],
         ),
         // チェリーカップ
         (
             "ロサンゼルスコースト",
-            Series::Tour,
+            Console::Tour,
             vec![
                 "blal",
                 "lal",
@@ -645,17 +645,17 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         ),
         (
             "サンセットこうや",
-            Series::GBA,
+            Console::GBA,
             vec!["bsw", "sw", "ｻﾝｾｯﾄｺｳﾔ", "ｻﾝｾｯﾄ", "ｺｳﾔ", "ｻﾝｾ"],
         ),
         (
             "ノコノコみさき",
-            Series::Wii,
+            Console::Wii,
             vec!["bkc", "kc", "ﾉｺﾉｺﾐｻｷ", "ﾉｺﾉｺ", "ﾉｺﾐｻ", "ﾉｺﾐ"],
         ),
         (
             "バンクーバーバレー",
-            Series::Tour,
+            Console::Tour,
             vec!["bvv", "vv", "vancouver", "ﾊﾞﾝｸｰﾊﾞｰﾊﾞﾚｰ", "ﾊﾞﾝｸｰﾊﾞｰ"],
         ),
         // ドングリカップ
@@ -663,7 +663,7 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         // トゲゾーカップ
         // TODO
     ] {
-        let course = Course::new(name.to_string(), series);
+        let course = Course::new(name.to_string(), console);
         let course_name = course.to_string();
         courses.push(course);
         for shorthand in shorthands {
@@ -676,28 +676,28 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
     Mutex::new(courses)
 });
 
-pub static COURSES_SERIES_MAP_MAP: Lazy<Mutex<HashMap<Series, HashMap<String, Course>>>> =
+pub static COURSES_CONSOLE_MAP_MAP: Lazy<Mutex<HashMap<Console, HashMap<String, Course>>>> =
     Lazy::new(|| {
         let mut map = HashMap::new();
-        for series in [
-            Series::SFC,
-            Series::GBA,
-            Series::N64,
-            Series::GC,
-            Series::DS,
-            Series::Wii,
-            Series::_3DS,
-            Series::New,
-            Series::Tour,
+        for console in [
+            Console::SFC,
+            Console::GBA,
+            Console::N64,
+            Console::GC,
+            Console::DS,
+            Console::Wii,
+            Console::_3DS,
+            Console::New,
+            Console::Tour,
         ] {
             let mut courses = HashMap::new();
             for course in COURSES.lock().unwrap().iter() {
-                if course.series == series {
+                if course.console == console {
                     let noramlized_name = normalize_japanese_characters(course.name.clone());
                     courses.insert(noramlized_name, course.clone());
                 }
             }
-            map.insert(series, courses);
+            map.insert(console, courses);
         }
         Mutex::new(map)
     });
@@ -711,44 +711,44 @@ pub static STRING_COURSE_MAP: Lazy<Mutex<HashMap<String, Course>>> = Lazy::new(|
     Mutex::new(map)
 });
 
-fn get_series_by_words(words: &Vec<Word>) -> Series {
+fn get_console_by_words(words: &Vec<Word>) -> Console {
     for word in words {
         let lower_text = word.text.to_lowercase();
         let lower_text = lower_text.trim();
         if lower_text.contains("sfc") {
-            return Series::SFC;
+            return Console::SFC;
         }
         if lower_text.contains("gba") {
-            return Series::GBA;
+            return Console::GBA;
         }
         if lower_text.contains("n64") {
-            return Series::N64;
+            return Console::N64;
         }
         if lower_text.contains("gc") {
-            return Series::GC;
+            return Console::GC;
         }
         // dsよりも3dsを先に判定する
         if lower_text.contains("3ds") {
-            return Series::_3DS;
+            return Console::_3DS;
         }
         if lower_text.contains("ds") {
-            return Series::DS;
+            return Console::DS;
         }
         if lower_text.contains("wii") {
-            return Series::Wii;
+            return Console::Wii;
         }
         if lower_text.contains("tour") {
-            return Series::Tour;
+            return Console::Tour;
         }
     }
-    Series::New
+    Console::New
 }
 
 pub fn get_course_by_words(words: &Vec<Word>) -> Option<Course> {
-    let series = get_series_by_words(words);
+    let console = get_console_by_words(words);
 
-    let binding = COURSES_SERIES_MAP_MAP.lock().unwrap();
-    let course_map = binding.get(&series).unwrap();
+    let binding = COURSES_CONSOLE_MAP_MAP.lock().unwrap();
+    let course_map = binding.get(&console).unwrap();
     for word in words {
         let lower_text = word.text.to_lowercase();
         let lower_text = lower_text.trim();
@@ -764,7 +764,7 @@ pub fn get_course_by_words_with_nearest(words: &Vec<Word>, threshold: usize) -> 
     if words.is_empty() {
         return None;
     }
-    let series = get_series_by_words(words);
+    let console = get_console_by_words(words);
 
     let longest_word = words
         .iter()
@@ -772,8 +772,8 @@ pub fn get_course_by_words_with_nearest(words: &Vec<Word>, threshold: usize) -> 
         .unwrap();
     let normalized_longest_word = normalize_japanese_characters(longest_word.text.clone());
 
-    let binding = COURSES_SERIES_MAP_MAP.lock().unwrap();
-    let course_map = binding.get(&series).unwrap();
+    let binding = COURSES_CONSOLE_MAP_MAP.lock().unwrap();
+    let course_map = binding.get(&console).unwrap();
     let course_names = course_map.keys().collect::<Vec<&String>>();
     // レーベンシュタイン距離が最小のコースを探す
     let mut min_distance = std::usize::MAX;
@@ -830,23 +830,23 @@ mod tests {
     fn test_get_course_by_words() {
         assert_vec_str_to_course(
             vec!["ヨッシーサーキット", "GC"],
-            Course::new("ヨッシーサーキット".to_string(), Series::GC),
+            Course::new("ヨッシーサーキット".to_string(), Console::GC),
         );
         assert_vec_str_to_course(
             vec!["ロックロックマウンテン", "3DS"],
-            Course::new("ロックロックマウンテン".to_string(), Series::_3DS),
+            Course::new("ロックロックマウンテン".to_string(), Console::_3DS),
         );
         assert_vec_str_to_course(
             vec!["キノヒオサーキット", "3DS"],
-            Course::new("キノピオサーキット".to_string(), Series::_3DS),
+            Course::new("キノピオサーキット".to_string(), Console::_3DS),
         );
         assert_vec_str_to_course(
             vec!["どうぶつの森"],
-            Course::new("どうぶつの森".to_string(), Series::New),
+            Course::new("どうぶつの森".to_string(), Console::New),
         );
         assert_vec_str_to_course(
             vec!["どうぶつの森"],
-            Course::new("どうぶつの森".to_string(), Series::New),
+            Course::new("どうぶつの森".to_string(), Console::New),
         );
     }
 
@@ -854,28 +854,28 @@ mod tests {
     fn test_get_course_by_words_with_nearest() {
         assert_vec_str_to_course_with_nearest(
             vec!["ヨッシーサーキット", "GC"],
-            Some(Course::new("ヨッシーサーキット".to_string(), Series::GC)),
+            Some(Course::new("ヨッシーサーキット".to_string(), Console::GC)),
         );
         assert_vec_str_to_course_with_nearest(
             vec!["ックロックマウンテン", "3DS"],
             Some(Course::new(
                 "ロックロックマウンテン".to_string(),
-                Series::_3DS,
+                Console::_3DS,
             )),
         );
         assert_vec_str_to_course_with_nearest(
             vec!["ノヒオサーキット", "3DS"],
-            Some(Course::new("キノピオサーキット".to_string(), Series::_3DS)),
+            Some(Course::new("キノピオサーキット".to_string(), Console::_3DS)),
         );
         assert_vec_str_to_course_with_nearest(
             vec!["うぶつの森"],
-            Some(Course::new("どうぶつの森".to_string(), Series::New)),
+            Some(Course::new("どうぶつの森".to_string(), Console::New)),
         );
         assert_vec_str_to_course_with_nearest(
             vec!["ーユーヨークドリーム", "Tour"],
             Some(Course::new(
                 "ニューヨークドリーム".to_string(),
-                Series::Tour,
+                Console::Tour,
             )),
         );
         assert_vec_str_to_course_with_nearest(vec!["あまりにもかけ離れている場合", "Tour"], None);
