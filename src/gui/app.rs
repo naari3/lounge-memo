@@ -6,7 +6,6 @@ use eframe::{
     epaint::{ColorImage, FontFamily},
     CreationContext, Frame,
 };
-use egui_dropdown::DropDownBox;
 use egui_extras::{Column, RetainedImage, TableBuilder};
 use image::imageops::FilterType;
 use std::{
@@ -26,6 +25,8 @@ use crate::{
     race_result::Position,
     settings::Settings,
 };
+
+use super::course_dropdown::DropDownBox;
 
 const PPP: f32 = 1.25;
 
@@ -123,7 +124,7 @@ impl App {
         let mut fonts = FontDefinitions::default();
         fonts.font_data.insert(
             "notosansjp".to_owned(),
-            FontData::from_static(include_bytes!("./assets/NotoSansJP-VariableFont_wght.ttf")),
+            FontData::from_static(include_bytes!("../assets/NotoSansJP-VariableFont_wght.ttf")),
         );
         fonts
             .families
