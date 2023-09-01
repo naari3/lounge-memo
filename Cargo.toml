@@ -38,6 +38,7 @@ toml = "0.7.6"
 serde = { version = "1.0.183", features = ["derive"] }
 serde_json = "1.0"
 wgpu = "0.17.0"
+kanaria = "0.2.0"
 
 # crateにある最新のvcpkgはまだ VCPKG_INSTALLED_ROOT に対応していないので、直接指定する
 # おそらく0.2.16がリリースされたらこのセクションは削除できる

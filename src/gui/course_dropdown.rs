@@ -2,6 +2,8 @@
 // modify to use with Course struct
 
 use eframe::egui::{Id, Key, Response, Ui, Widget};
+use kanaria::string::UCSStr;
+use kanaria::utils::ConvertTarget;
 use std::hash::Hash;
 
 use crate::courses::COURSE_SHORTHAND_MAP;
@@ -38,6 +40,15 @@ impl<'a, F: FnMut(&mut Ui, &str) -> Response, V: AsRef<str>, I: Iterator<Item = 
     }
 }
 
+// 大文字英字を小文字に、ひらがなとカタカナをすべて半角ｶﾅに変換する
+fn to_half_width(s: &str) -> String {
+    UCSStr::from_str(s)
+        .katakana()
+        .narrow(ConvertTarget::ALL)
+        .lower_case()
+        .to_string()
+}
+
 impl<'a, F: FnMut(&mut Ui, &str) -> Response, V: AsRef<str>, I: Iterator<Item = V>> Widget
     for DropDownBox<'a, F, V, I>
 {
@@ -55,7 +66,8 @@ impl<'a, F: FnMut(&mut Ui, &str) -> Response, V: AsRef<str>, I: Iterator<Item = 
         }
         let enter_pressed = r.ctx.input(|i| i.key_pressed(Key::Enter));
         if enter_pressed {
-            if let Some(course_name) = COURSE_SHORTHAND_MAP.lock().unwrap().get(buf) {
+            let lower = to_half_width(buf);
+            if let Some(course_name) = COURSE_SHORTHAND_MAP.lock().unwrap().get(&lower) {
                 *buf = course_name.to_owned();
                 ui.memory_mut(|m| m.close_popup());
             }
@@ -85,5 +97,28 @@ impl<'a, F: FnMut(&mut Ui, &str) -> Response, V: AsRef<str>, I: Iterator<Item = 
         }
 
         r
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_to_half() {
+        assert_eq!(super::to_half_width("あいうえお"), "ｱｲｳｴｵ");
+        assert_eq!(super::to_half_width("アイウエオ"), "ｱｲｳｴｵ");
+        assert_eq!(super::to_half_width("ｱｲｳｴｵ"), "ｱｲｳｴｵ");
+        assert_eq!(super::to_half_width("abcde"), "abcde");
+        assert_eq!(super::to_half_width("ABCDE"), "abcde");
+        assert_eq!(super::to_half_width("ａｂｃｄｅ"), "abcde");
+        assert_eq!(super::to_half_width("ＡＢＣＤＥ"), "abcde");
+        assert_eq!(super::to_half_width("あいうえおabcde"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("あいうえおABCDE"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("あいうえおａｂｃｄｅ"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("あいうえおＡＢＣＤＥ"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("アイウエオabcde"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("アイウエオABCDE"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("アイウエオａｂｃｄｅ"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("アイウエオＡＢＣＤＥ"), "ｱｲｳｴｵabcde");
+        assert_eq!(super::to_half_width("ｱｲｳｴｵabcde"), "ｱｲｳｴｵabcde");
     }
 }
