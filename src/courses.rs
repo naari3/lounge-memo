@@ -540,7 +540,7 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
         (
             "レインボーロード",
             Console::_3DS,
-            vec!["brr", "3dsﾆｼﾞ", "3ds虹", "7ﾆｼﾞ", "7虹"],
+            vec!["brr7", "rr7", "3dsﾆｼﾞ", "3ds虹", "7ﾆｼﾞ", "7虹"],
         ),
         // フルーツカップ
         (
@@ -659,9 +659,47 @@ pub static COURSES: Lazy<Mutex<Vec<Course>>> = Lazy::new(|| {
             vec!["bvv", "vv", "vancouver", "ﾊﾞﾝｸｰﾊﾞｰﾊﾞﾚｰ", "ﾊﾞﾝｸｰﾊﾞｰ"],
         ),
         // ドングリカップ
-        // TODO
+	(
+            "ローマアバンティ",
+            Console::Tour,
+            vec!["bra", "ra", "rome", "ﾛｰﾏｱﾊﾞﾝﾃｨ", "ﾛｰﾏ"],
+        ),
+	(
+            "DKマウンテン",
+            Console::GC,
+            vec!["bdkm", "dkm", "dkﾏｳﾝﾃﾝ", "dkﾔﾏ", "dk山"],
+        ),
+	(
+            "デイジーサーキット",
+            Console::Wii,
+            vec!["bdci", "dci", "ﾃﾞｲｼﾞｰｻｰｷｯﾄ", "ﾃﾞｲｻ"],
+        ),
+	(
+            "パックンしんでん",
+            Console::New,
+            vec!["bppc", "ppc", "ﾊﾟｯｸﾝｼﾝﾃﾞﾝ", "ﾊﾟｸｼﾝ", "ｼﾝﾃﾞﾝ"],
+        ),
         // トゲゾーカップ
-        // TODO
+	 (
+            "マドリードグランデ",
+            Console::Tour,
+            vec!["bmd", "md", "madrid", "ﾏﾄﾞﾘｰﾄﾞｸﾞﾗﾝﾃﾞ", "ﾏﾄﾞﾘｰﾄﾞ"],
+        ),
+	 (
+            "ロゼッタプラネット",
+            Console::_3DS,
+            vec!["briw", "riw", "ﾛｾﾞｯﾀﾌﾟﾗﾈｯﾄ", "ﾛｾﾞﾌﾟﾗ"],
+        ),
+	 (
+            "クッパじょう3",
+            Console::SFC,
+            vec!["bbc3", "bbc3", "bc3", "ｸｯﾊﾟｼﾞｮｳ3", "ｸｯﾊﾟｼﾞｮｳ", "ｸｯﾊﾟ城"],
+        ),
+	 (
+            "レインボーロード",
+            Console::Wii,
+            vec!["brr", "brrw", "rrw", "wiiﾆｼﾞ", "wiiﾚｲﾝﾎﾞｰﾛｰﾄﾞ", "wii虹", "ｳｨｰﾆｼﾞ"],
+        ),
     ] {
         let course = Course::new(name.to_string(), console);
         let course_name = course.to_string();
