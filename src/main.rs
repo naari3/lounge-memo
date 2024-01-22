@@ -133,7 +133,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     let options = eframe::NativeOptions {
-        initial_window_size: Some(eframe::egui::Vec2::new(400.0, 720.0)),
+        viewport: eframe::egui::ViewportBuilder::default().with_inner_size([400.0, 720.0]),
         ..Default::default()
     };
     eframe::run_native(

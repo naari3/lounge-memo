@@ -29,9 +29,9 @@ chrono = { version = "0.4.26", features = ["serde"] }
 strsim = "0.10.0"
 fern = "0.6.2"
 log = "0.4.19"
-eframe = "0.22.0"
-egui_extras = "0.22.0"
-egui-dropdown = "0.3.0"
+eframe = "0.25.0"
+egui_extras = "0.25.0"
+egui-dropdown = "0.6.0"
 opencv = { version = "0.84.4", features = ["clang-runtime"] }
 clap = { version = "4.0", features = ["derive"] }
 toml = "0.7.6"

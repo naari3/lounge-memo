@@ -460,7 +460,10 @@ fn settings_view(this: &mut App, ui: &mut egui::Ui, frame: &Frame) {
                     ui.selectable_value(&mut this.buf_settings.device_name, dn.clone(), dn.clone());
                 })
             });
-        this.refresh_capture_preview(frame.info().window_info.size.x - 15.0);
+        let width = ui
+            .ctx()
+            .input(|i| i.viewport().inner_rect.unwrap().width() - 15.0);
+        this.refresh_capture_preview(width);
         if let Some(captured) = this.capture_preview.as_ref() {
             captured.show(ui);
         }
